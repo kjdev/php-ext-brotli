@@ -10,14 +10,11 @@ Documentation for Brotli can be found at
 ```
 % git clone --recursive --depth=1 https://github.com/kjdev/php-ext-brotli.git
 % cd php-ext-brotli
-(% patch -p1 < brotli-is-constant.patch)
 % phpize
 % ./configure
 % make
 $ make install
 ```
-
-> brotli-is-constant.patch:
 
 ## Configration
 
