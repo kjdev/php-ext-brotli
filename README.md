@@ -1,5 +1,7 @@
 # Brotli Extension for PHP
 
+[![Build Status](https://travis-ci.org/kjdev/php-ext-brotli.png?branch=master)](https://travis-ci.org/kjdev/php-ext-brotli)
+
 This extension allows Brotli compression.
 
 Documentation for Brotli can be found at
