@@ -35,7 +35,7 @@ extension=brotli.so
 
 ### Description
 
-string **brotli\_compress** ( string _$data_ [, int _$quarity_ = 11, int _$mode_ = -1 ] )
+string **brotli\_compress** ( string _$data_ [, int _$quality_ = 11, int _$mode_ = -1 ] )
 
 This function compress the given string using the ZLIB data format.
 
@@ -45,7 +45,7 @@ This function compress the given string using the ZLIB data format.
 
   The data to compress.
 
-* _quarity_
+* _quality_
 
   The higher the quality, the slower the compression.
   (Defaults to 11)
