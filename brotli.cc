@@ -23,6 +23,7 @@ extern "C" {
 /* brotli */
 #include "brotli/enc/encode.h"
 #include "brotli/dec/decode.h"
+#include "brotli/tools/version.h"
 
 static ZEND_FUNCTION(brotli_compress);
 static ZEND_FUNCTION(brotli_uncompress);
@@ -68,7 +69,7 @@ ZEND_MINFO_FUNCTION(brotli)
     php_info_print_table_start();
     php_info_print_table_row(2, "Brotli support", "enabled");
     php_info_print_table_row(2, "Extension Version", BROTLI_EXT_VERSION);
-    php_info_print_table_row(2, "Library Version", BROTLI_LIB_VERSION);
+    php_info_print_table_row(2, "Library Version", BROTLI_VERSION);
     php_info_print_table_end();
 }
 
