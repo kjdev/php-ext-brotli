@@ -117,7 +117,7 @@ static ZEND_FUNCTION(brotli_compress)
         (mode == brotli::BrotliParams::Mode::MODE_GENERIC ||
          mode == brotli::BrotliParams::Mode::MODE_TEXT ||
          mode == brotli::BrotliParams::Mode::MODE_FONT)) {
-        params.mode = mode;
+        params.mode = (brotli::BrotliParams::Mode)mode;
     }
 
     out_size = 1.2 * in_size + 10240;
@@ -125,7 +125,8 @@ static ZEND_FUNCTION(brotli_compress)
 
     if (!BrotliCompressBuffer(params, in_size, (const uint8_t*)in,
                               &out_size, (uint8_t*)out)) {
-        php_printf("ERR: compressBuffer\n");
+        php_error_docref(NULL TSRMLS_CC, E_WARNING,
+                         "Brotli compress failed\n");
         efree(out);
         RETURN_FALSE;
     }
@@ -138,19 +139,6 @@ static ZEND_FUNCTION(brotli_compress)
     efree(out);
 }
 
-static int
-php_brotli_output_callback(void *data, const uint8_t *buf, size_t count)
-{
-#if ZEND_MODULE_API_NO >= 20141001
-    smart_string *output = (smart_string *)data;
-    smart_string_appendl(output, buf, count);
-#else
-    smart_str *output = (smart_str *)data;
-    smart_str_appendl(output, buf, count);
-#endif
-    return (int)count;
-}
-
 static ZEND_FUNCTION(brotli_uncompress)
 {
     long max_size = 0;
@@ -161,9 +149,6 @@ static ZEND_FUNCTION(brotli_uncompress)
 #else
     smart_str out = {0};
 #endif
-    BrotliMemInput mem_in;
-    BrotliInput input;
-    BrotliOutput output;
 
     if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s|l",
                               &in, &in_size, &max_size) == FAILURE) {
@@ -174,12 +159,42 @@ static ZEND_FUNCTION(brotli_uncompress)
         in_size = max_size;
     }
 
-    input = BrotliInitMemInput((const uint8_t*)in, in_size, &mem_in);
+    BrotliState *state = BrotliCreateState(NULL, NULL, NULL);
+    if (!state) {
+        php_error_docref(NULL TSRMLS_CC, E_WARNING,
+                         "Invalid Brotli state\n");
+        RETURN_FALSE;
+    }
 
-    output.cb_ = &php_brotli_output_callback;
-    output.data_ = &out;
+    size_t available_in = in_size;
+    const uint8_t *next_in = (const uint8_t *)in;
+    const size_t buffer_size = 65536;
+    uint8_t *buffer = (uint8_t *)emalloc(buffer_size);
 
-    if (!BrotliDecompress(input, output)) {
+    BrotliResult result = BROTLI_RESULT_NEEDS_MORE_OUTPUT;
+    while (result == BROTLI_RESULT_NEEDS_MORE_OUTPUT) {
+        size_t available_out = buffer_size;
+        uint8_t *next_out = buffer;
+        size_t total_out = 0;
+        result = BrotliDecompressStream(&available_in, &next_in,
+                                        &available_out, &next_out,
+                                        &total_out, state);
+        size_t used_out = buffer_size - available_out;
+        if (used_out != 0) {
+#if ZEND_MODULE_API_NO >= 20141001
+            smart_string_appendl(&out, buffer, used_out);
+#else
+            smart_str_appendl(&out, buffer, used_out);
+#endif
+        }
+    }
+
+    BrotliDestroyState(state);
+    efree(buffer);
+
+    if (result != BROTLI_RESULT_SUCCESS) {
+        php_error_docref(NULL TSRMLS_CC, E_WARNING,
+                         "Brotli decompress failed\n");
 #if ZEND_MODULE_API_NO >= 20141001
         smart_string_free(&out);
 #else
@@ -189,9 +204,9 @@ static ZEND_FUNCTION(brotli_uncompress)
     }
 
 #if ZEND_MODULE_API_NO >= 20141001
-    RETURN_STRINGL(out.c, out.len);
+    RETVAL_STRINGL(out.c, out.len);
 #else
-    RETURN_STRINGL(out.c, out.len, 1);
+    RETVAL_STRINGL(out.c, out.len, 1);
 #endif
 
 #if ZEND_MODULE_API_NO >= 20141001
