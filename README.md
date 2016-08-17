@@ -18,7 +18,7 @@ Documentation for Brotli can be found at
 $ make install
 ```
 
-## Configration
+## Configuration
 
 brotli.ini:
 
