@@ -1,7 +1,3 @@
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 #ifdef HAVE_CONFIG_H
 #    include "config.h"
 #endif
@@ -15,10 +11,6 @@ extern "C" {
 #include <ext/standard/php_smart_str.h>
 #endif
 #include "php_brotli.h"
-
-#ifdef __cplusplus
-}
-#endif
 
 /* brotli */
 #include "brotli/enc/encode.h"
@@ -47,14 +39,11 @@ static zend_function_entry brotli_functions[] = {
 
 ZEND_MINIT_FUNCTION(brotli)
 {
-    REGISTER_LONG_CONSTANT("BROTLI_GENERIC",
-                           brotli::BrotliParams::Mode::MODE_GENERIC,
+    REGISTER_LONG_CONSTANT("BROTLI_GENERIC", BROTLI_MODE_GENERIC,
                            CONST_CS | CONST_PERSISTENT);
-    REGISTER_LONG_CONSTANT("BROTLI_TEXT",
-                           brotli::BrotliParams::Mode::MODE_TEXT,
+    REGISTER_LONG_CONSTANT("BROTLI_TEXT", BROTLI_MODE_TEXT,
                            CONST_CS | CONST_PERSISTENT);
-    REGISTER_LONG_CONSTANT("BROTLI_FONT",
-                           brotli::BrotliParams::Mode::MODE_FONT,
+    REGISTER_LONG_CONSTANT("BROTLI_FONT", BROTLI_MODE_FONT,
                            CONST_CS | CONST_PERSISTENT);
     return SUCCESS;
 }
@@ -96,12 +85,14 @@ ZEND_GET_MODULE(brotli)
 
 static ZEND_FUNCTION(brotli_compress)
 {
-    long quality = 11;
-    long mode = -1;
-    char *in, *out = NULL;
+    char *in;
+#if ZEND_MODULE_API_NO >= 20141001
+    size_t in_size;
+#else
     int in_size;
-    size_t out_size = 0;
-    brotli::BrotliParams params;
+#endif
+    long quality = BROTLI_DEFAULT_QUALITY;
+    long mode =  BROTLI_MODE_GENERIC;
 
     if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC,
                               "s|ll", &in, &in_size,
@@ -109,22 +100,29 @@ static ZEND_FUNCTION(brotli_compress)
         RETURN_FALSE;
     }
 
-    if (quality > 0) {
-        params.quality = quality;
+    size_t out_size = BrotliEncoderMaxCompressedSize(in_size);
+    char *out = (char *)emalloc(out_size);
+    if (!out) {
+        php_error_docref(NULL TSRMLS_CC, E_WARNING,
+                         "Brotli compress memory allocate failed\n");
+        RETURN_FALSE;
     }
 
-    if (mode != -1 &&
-        (mode == brotli::BrotliParams::Mode::MODE_GENERIC ||
-         mode == brotli::BrotliParams::Mode::MODE_TEXT ||
-         mode == brotli::BrotliParams::Mode::MODE_FONT)) {
-        params.mode = (brotli::BrotliParams::Mode)mode;
+    if (mode != BROTLI_MODE_GENERIC &&
+        mode != BROTLI_MODE_TEXT &&
+        mode != BROTLI_MODE_FONT) {
+        mode = BROTLI_MODE_GENERIC;
     }
 
-    out_size = 1.2 * in_size + 10240;
-    out = (char *)emalloc(out_size);
+    if (quality < BROTLI_MIN_QUALITY || quality > BROTLI_MAX_QUALITY) {
+        quality = BROTLI_DEFAULT_QUALITY;
+    }
 
-    if (!BrotliCompressBuffer(params, in_size, (const uint8_t*)in,
-                              &out_size, (uint8_t*)out)) {
+    int lgwin = BROTLI_DEFAULT_WINDOW;
+
+    if (!BrotliEncoderCompress((int)quality, lgwin, (BrotliEncoderMode)mode,
+                               in_size, (const uint8_t*)in,
+                               &out_size, (uint8_t*)out)) {
         php_error_docref(NULL TSRMLS_CC, E_WARNING,
                          "Brotli compress failed\n");
         efree(out);
@@ -143,10 +141,11 @@ static ZEND_FUNCTION(brotli_uncompress)
 {
     long max_size = 0;
     char *in;
-    int in_size;
 #if ZEND_MODULE_API_NO >= 20141001
+    size_t in_size;
     smart_string out = {0};
 #else
+    int in_size;
     smart_str out = {0};
 #endif
 
@@ -166,9 +165,11 @@ static ZEND_FUNCTION(brotli_uncompress)
         RETURN_FALSE;
     }
 
+    const size_t kFileBufferSize = 65536;
+
     size_t available_in = in_size;
     const uint8_t *next_in = (const uint8_t *)in;
-    const size_t buffer_size = 65536;
+    size_t buffer_size = kFileBufferSize;
     uint8_t *buffer = (uint8_t *)emalloc(buffer_size);
 
     BrotliResult result = BROTLI_RESULT_NEEDS_MORE_OUTPUT;

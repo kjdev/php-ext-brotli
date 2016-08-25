@@ -13,8 +13,8 @@ $files = array(
     'tests/testdata/asyoulik.txt',
     'tests/testdata/lcet10.txt',
     'tests/testdata/plrabn12.txt',
-    '/enc/encode.cc',
-    '/enc/dictionary.h',
+    '/enc/encode.c',
+    '/common/dictionary.h',
     '/dec/decode.c',
 );
 
@@ -72,13 +72,13 @@ Roundtrip testing file plrabn12.txt at quality 9
   OK
 Roundtrip testing file plrabn12.txt at quality 11
   OK
-Roundtrip testing file encode.cc at quality 1
+Roundtrip testing file encode.c at quality 1
   OK
-Roundtrip testing file encode.cc at quality 6
+Roundtrip testing file encode.c at quality 6
   OK
-Roundtrip testing file encode.cc at quality 9
+Roundtrip testing file encode.c at quality 9
   OK
-Roundtrip testing file encode.cc at quality 11
+Roundtrip testing file encode.c at quality 11
   OK
 Roundtrip testing file dictionary.h at quality 1
   OK

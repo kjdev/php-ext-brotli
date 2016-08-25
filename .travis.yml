@@ -4,17 +4,10 @@ php:
   - 5.4
   - 5.5
   - 5.6
-  - nightly
-
-addons:
-  apt:
-    sources:
-      - ubuntu-toolchain-r-test
-    packages:
-      - g++-4.8
+  - 7.0
 
 env:
-  - REPORT_EXIT_STATUS=1 NO_INTERACTION=1 CC="g++-4.8" CXX="g++-4.8"
+  - REPORT_EXIT_STATUS=1 NO_INTERACTION=1
 
 before_script:
   - phpize && ./configure && make
