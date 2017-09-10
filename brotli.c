@@ -13,9 +13,8 @@
 #include "php_brotli.h"
 
 /* brotli */
-#include "brotli/enc/encode.h"
-#include "brotli/dec/decode.h"
-#include "brotli/tools/version.h"
+#include "brotli/encode.h"
+#include "brotli/decode.h"
 
 static ZEND_FUNCTION(brotli_compress);
 static ZEND_FUNCTION(brotli_uncompress);
@@ -58,7 +57,7 @@ ZEND_MINFO_FUNCTION(brotli)
     php_info_print_table_start();
     php_info_print_table_row(2, "Brotli support", "enabled");
     php_info_print_table_row(2, "Extension Version", BROTLI_EXT_VERSION);
-    php_info_print_table_row(2, "Library Version", BROTLI_VERSION);
+    php_info_print_table_row(2, "Library Version", BROTLI_LIB_VERSION);
     php_info_print_table_end();
 }
 
@@ -158,7 +157,7 @@ static ZEND_FUNCTION(brotli_uncompress)
         in_size = max_size;
     }
 
-    BrotliState *state = BrotliCreateState(NULL, NULL, NULL);
+    BrotliDecoderState *state = BrotliDecoderCreateInstance(NULL, NULL, NULL);
     if (!state) {
         php_error_docref(NULL TSRMLS_CC, E_WARNING,
                          "Invalid Brotli state\n");
@@ -172,14 +171,14 @@ static ZEND_FUNCTION(brotli_uncompress)
     size_t buffer_size = kFileBufferSize;
     uint8_t *buffer = (uint8_t *)emalloc(buffer_size);
 
-    BrotliResult result = BROTLI_RESULT_NEEDS_MORE_OUTPUT;
-    while (result == BROTLI_RESULT_NEEDS_MORE_OUTPUT) {
-        size_t available_out = buffer_size;
+    BrotliDecoderResult result = BROTLI_DECODER_RESULT_NEEDS_MORE_OUTPUT;
+    while (result == BROTLI_DECODER_RESULT_NEEDS_MORE_OUTPUT) {
+      size_t available_out = buffer_size;
         uint8_t *next_out = buffer;
         size_t total_out = 0;
-        result = BrotliDecompressStream(&available_in, &next_in,
-                                        &available_out, &next_out,
-                                        &total_out, state);
+        result = BrotliDecoderDecompressStream(state, &available_in, &next_in,
+                                               &available_out, &next_out,
+                                               &total_out);
         size_t used_out = buffer_size - available_out;
         if (used_out != 0) {
 #if ZEND_MODULE_API_NO >= 20141001
@@ -190,10 +189,10 @@ static ZEND_FUNCTION(brotli_uncompress)
         }
     }
 
-    BrotliDestroyState(state);
+    BrotliDecoderDestroyInstance(state);
     efree(buffer);
 
-    if (result != BROTLI_RESULT_SUCCESS) {
+    if (result != BROTLI_DECODER_RESULT_SUCCESS) {
         php_error_docref(NULL TSRMLS_CC, E_WARNING,
                          "Brotli decompress failed\n");
 #if ZEND_MODULE_API_NO >= 20141001
