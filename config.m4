@@ -22,7 +22,7 @@ PHP_ARG_ENABLE(brotli, whether to enable brotli support,
 [  --enable-brotli         Enable brotli support])
 
 PHP_ARG_WITH(libbrotli, whether to use system brotli library,
-[  --with-libbrotli=DIR    Use libbrotli], no, no)
+[  --with-libbrotli        Use libbrotli], no, no)
 
 if test "$PHP_BROTLI" != "no"; then
 

@@ -18,6 +18,18 @@ Documentation for Brotli can be found at
 $ make install
 ```
 
+To use the system library (using pkg-config)
+
+``` bash
+% ./configure --with-libbrotli
+```
+
+## Distribution binary packages
+
+### Fedora / CentOS / RHEL
+
+RPM packages of this extension are available in [» Remi's RPM repository](https://rpms.remirepo.net/) and are named **php-brotli**.
+
 ## Configuration
 
 brotli.ini:
