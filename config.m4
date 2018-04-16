@@ -66,7 +66,7 @@ if test "$PHP_BROTLI" != "no"; then
   else
     AC_MSG_CHECKING(for brotli)
     AC_MSG_RESULT(use bundled copy)
-    AC_DEFINE_UNQUOTED(BROTLI_LIB_VERSION, "1.0.1", [bundled library version])
+    AC_DEFINE_UNQUOTED(BROTLI_LIB_VERSION, "1.0.4", [bundled library version])
 
     BROTLI_COMMON_SOURCES="brotli/c/common/dictionary.c brotli/c/common/transform.c"
     BROTLI_ENC_SOURCES="brotli/c/enc/backward_references.c brotli/c/enc/backward_references_hq.c brotli/c/enc/bit_cost.c brotli/c/enc/block_splitter.c brotli/c/enc/brotli_bit_stream.c brotli/c/enc/cluster.c brotli/c/enc/compress_fragment.c brotli/c/enc/compress_fragment_two_pass.c brotli/c/enc/dictionary_hash.c brotli/c/enc/encode.c brotli/c/enc/encoder_dict.c brotli/c/enc/entropy_encode.c brotli/c/enc/histogram.c brotli/c/enc/literal_cost.c brotli/c/enc/memory.c brotli/c/enc/metablock.c brotli/c/enc/static_dict.c brotli/c/enc/utf8_util.c"
