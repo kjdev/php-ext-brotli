@@ -10,6 +10,11 @@ extern "C" {
 extern zend_module_entry brotli_module_entry;
 #define phpext_brotli_ptr &brotli_module_entry
 
+/* support php-5.2m backport from php-5.3 */
+#ifndef ZEND_FE_END
+#define ZEND_FE_END            { NULL, NULL, NULL, 0, 0 }
+#endif
+
 #ifdef PHP_WIN32
 #    define PHP_BROTLI_API __declspec(dllexport)
 #elif defined(__GNUC__) && __GNUC__ >= 4
