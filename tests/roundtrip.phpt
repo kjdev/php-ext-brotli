@@ -7,7 +7,7 @@ if (!extension_loaded('brotli')) {
     dl('brotli.' . PHP_SHLIB_SUFFIX);
 }
 
-$dir = __DIR__ . '/../brotli/';
+$dir = dirname(__FILE__) . '/../brotli/';
 $files = array(
     'tests/testdata/alice29.txt',
     'tests/testdata/asyoulik.txt',

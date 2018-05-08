@@ -7,7 +7,7 @@ if (!extension_loaded('brotli')) {
     dl('brotli.' . PHP_SHLIB_SUFFIX);
 }
 
-$dir = __DIR__ . '/../brotli/tests/testdata/*.compressed*';
+$dir = dirname(__FILE__) . '/../brotli/tests/testdata/*.compressed*';
 
 foreach (glob($dir) as $filename) {
     echo 'Testing decompression of file ', basename($filename), PHP_EOL;
