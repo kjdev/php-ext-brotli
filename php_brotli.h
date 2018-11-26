@@ -5,7 +5,7 @@
 extern "C" {
 #endif
 
-#define BROTLI_EXT_VERSION "0.5.2"
+#define BROTLI_EXT_VERSION "0.6.0"
 
 extern zend_module_entry brotli_module_entry;
 #define phpext_brotli_ptr &brotli_module_entry

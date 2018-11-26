@@ -38,6 +38,29 @@ brotli.ini:
 extension=brotli.so
 ```
 
+### Experimental output handler option
+
+Name                              | Default | Changeable
+--------------------------------- | ------- | ----------
+brotli.output\_compression        | 0       | PHP\_INI\_ALL
+brotli.output\_compression\_level | -1      | PHP\_INI\_ALL
+
+* brotli.output\_compression _boolean_
+
+    Whether to transparently compress pages.
+    If this option is set to "On" in php.ini or the Apache configuration,
+    pages are compressed if the browser sends an "Accept-Encoding: br" header.
+    "Content-Encoding: br" and "Vary: Accept-Encoding" headers are added to
+    the output. In runtime, it can be set only before sending any output.
+
+* brotli.output\_compression\_level _integer_
+
+    Compression level used for transparent output compression.
+    Specify a value between 0 to 11.
+    The default value of -1 uses internally defined values (11).
+
+> Available since PHP 5.4.0.
+
 ## Function
 
 * brotli\_compress — Compress a string
@@ -102,3 +125,15 @@ $uncompressed = brotli_uncompress($compressed);
 
 echo $uncompressed;
 ```
+
+### Output handler
+
+```
+ini_set('brotli.output_compression', 'On');
+// OR
+// ob_start('ob_brotli_handler');
+
+echo ...;
+```
+
+> "Accept-Encoding: br" must be specified.
