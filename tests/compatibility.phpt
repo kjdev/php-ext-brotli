@@ -1,12 +1,9 @@
 --TEST--
 Test compatibility
 --SKIPIF--
+<?php if (!extension_loaded('brotli')) die('skip'); ?>
 --FILE--
 <?php
-if (!extension_loaded('brotli')) {
-    dl('brotli.' . PHP_SHLIB_SUFFIX);
-}
-
 $dir = dirname(__FILE__) . '/../brotli/tests/testdata/*.compressed*';
 
 foreach (glob($dir) as $filename) {

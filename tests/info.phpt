@@ -1,12 +1,9 @@
 --TEST--
 Test phpinfo() displays brotli info
 --SKIPIF--
+<?php if (!extension_loaded('brotli')) die('skip'); ?>
 --FILE--
 <?php
-if (!extension_loaded('brotli')) {
-    dl('brotli.' . PHP_SHLIB_SUFFIX);
-}
-
 phpinfo();
 --EXPECTF--
 %a
