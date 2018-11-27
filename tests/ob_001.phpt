@@ -4,7 +4,7 @@ brotli.output_compression
 <?php
 if (!extension_loaded('brotli')) die('skip need ext/brotli');
 if (false === stristr(PHP_SAPI, 'cgi')) die('skip need sapi/cgi');
-if (version_compare(PHP_VERSION, '5.4.0', '<') die('skip need version');
+if (version_compare(PHP_VERSION, '5.4.0', '<')) die('skip need version');
 ?>
 --GET--
 a=b
