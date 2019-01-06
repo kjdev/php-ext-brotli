@@ -1,19 +1,19 @@
 --TEST--
-Test compatibility
+Test roundtrip
 --SKIPIF--
-<?php if (!extension_loaded('brotli')) die('skip'); ?>
+<?php
+if (!extension_loaded('brotli')) {
+    die('skip');
+}
+include dirname(__FILE__) . '/files.inc';
+if (roundtrip_files() === false) {
+    die('skip');
+}
+?>
 --FILE--
 <?php
-$dir = dirname(__FILE__) . '/../brotli/';
-$files = array(
-    'tests/testdata/alice29.txt',
-    'tests/testdata/asyoulik.txt',
-    'tests/testdata/lcet10.txt',
-    'tests/testdata/plrabn12.txt',
-    '/c/enc/encode.c',
-    '/c/common/dictionary.h',
-    '/c/dec/decode.c',
-);
+include dirname(__FILE__) . '/files.inc';
+$files = roundtrip_files();
 
 $qualities = array(1, 6, 9, 11);
 
@@ -21,7 +21,7 @@ foreach ($files as $filename) {
     foreach ($qualities as $quality) {
         echo 'Roundtrip testing file ', basename($filename), ' at quality ', $quality, PHP_EOL;
 
-        $expected = $dir . $filename;
+        $expected = $filename;
 
         if (file_exists($expected)) {
             $data = file_get_contents($expected);

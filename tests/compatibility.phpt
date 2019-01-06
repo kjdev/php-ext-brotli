@@ -1,12 +1,21 @@
 --TEST--
 Test compatibility
 --SKIPIF--
-<?php if (!extension_loaded('brotli')) die('skip'); ?>
+<?php
+if (!extension_loaded('brotli')) {
+    die('skip');
+}
+include dirname(__FILE__) . '/files.inc';
+if (compatibility_files() === false) {
+    die('skip');
+}
+?>
 --FILE--
 <?php
-$dir = dirname(__FILE__) . '/../brotli/tests/testdata/*.compressed*';
+include dirname(__FILE__) . '/files.inc';
+$files = compatibility_files();
 
-foreach (glob($dir) as $filename) {
+foreach ($files as $filename) {
     echo 'Testing decompression of file ', basename($filename), PHP_EOL;
 
     $split =  explode('.compressed', $filename);
