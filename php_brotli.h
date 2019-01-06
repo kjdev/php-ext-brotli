@@ -6,7 +6,7 @@ extern "C" {
 #endif
 
 /* Don't forget to check BROTLI_LIB_VERSION in config.m4/w32 */
-#define BROTLI_EXT_VERSION "0.6.1"
+#define BROTLI_EXT_VERSION "0.6.2"
 
 extern zend_module_entry brotli_module_entry;
 #define phpext_brotli_ptr &brotli_module_entry
