@@ -28,20 +28,18 @@ extern zend_module_entry brotli_module_entry;
 #    include "TSRM.h"
 #endif
 
-#if PHP_VERSION_ID > 50400 // Output Handler: 5.4+
-
 #if PHP_MAJOR_VERSION < 7
 typedef long zend_long;
 #endif
 
 ZEND_BEGIN_MODULE_GLOBALS(brotli)
+#if PHP_VERSION_ID > 50400 // Output Handler: 5.4+
   zend_long output_compression;
   zend_long output_compression_level;
   zend_bool handler_registered;
   int compression_coding;
-ZEND_END_MODULE_GLOBALS(brotli);
-
 #endif
+ZEND_END_MODULE_GLOBALS(brotli)
 
 #ifdef ZTS
 #    define BROTLI_G(v) TSRMG(brotli_globals_id, zend_brotli_globals *, v)

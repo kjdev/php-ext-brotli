@@ -39,6 +39,8 @@ static zend_function_entry brotli_functions[] = {
     ZEND_FE_END
 };
 
+static const size_t brotli_buffer_size = 1 << 19;
+
 #if PHP_VERSION_ID > 50400 // Output Handler: 5.4+
 
 #define PHP_BROTLI_OUTPUT_HANDLER "ob_brotli_handler"
@@ -397,6 +399,381 @@ static void php_brotli_init_globals(zend_brotli_globals *brotli_globals)
 }
 #endif
 
+typedef struct _php_brotli_stream_data {
+    BrotliEncoderState *cctx;
+    BrotliDecoderState *dctx;
+    BrotliDecoderResult result;
+    size_t available_in;
+    const uint8_t *next_in;
+    size_t available_out;
+    uint8_t *next_out;
+    uint8_t *output;
+    php_stream *stream;
+} php_brotli_stream_data;
+
+#define STREAM_DATA_FROM_STREAM() \
+    php_brotli_stream_data *self = (php_brotli_stream_data *) stream->abstract
+
+#define STREAM_NAME "compress.brotli"
+
+static int php_brotli_decompress_close(php_stream *stream,
+                                       int close_handle TSRMLS_DC)
+{
+    STREAM_DATA_FROM_STREAM();
+
+    if (!self) {
+        return EOF;
+    }
+
+    if (close_handle) {
+        if (self->stream) {
+            php_stream_close(self->stream);
+            self->stream = NULL;
+        }
+    }
+
+    if (self->dctx) {
+        BrotliDecoderDestroyInstance(self->dctx);
+        self->dctx = NULL;
+    }
+    if (self->output) {
+        efree(self->output);
+    }
+    efree(self);
+
+    stream->abstract = NULL;
+
+    return EOF;
+}
+
+static size_t php_brotli_decompress_read(php_stream *stream,
+                                         char *buf,
+                                         size_t count TSRMLS_DC)
+{
+    size_t ret = 0;
+    STREAM_DATA_FROM_STREAM();
+
+    /* input */
+    uint8_t *input = (uint8_t *)emalloc(brotli_buffer_size);
+    if (self->result == BROTLI_DECODER_RESULT_NEEDS_MORE_INPUT) {
+        if (php_stream_eof(self->stream)) {
+            /* corrupt input */
+            if (input) {
+                efree(input);
+            }
+            return 0;
+        }
+        self->available_in = php_stream_read(self->stream, input,
+                                             brotli_buffer_size );
+        self->next_in = input;
+    }
+
+    /* output */
+    uint8_t *output = (uint8_t *)emalloc(count);
+    self->available_out = count;
+    self->next_out = output;
+
+    while (1) {
+        self->result = BrotliDecoderDecompressStream(self->dctx,
+                                                     &self->available_in,
+                                                     &self->next_in,
+                                                     &self->available_out,
+                                                     &self->next_out,
+                                                     0);
+        if (self->result == BROTLI_DECODER_RESULT_NEEDS_MORE_OUTPUT
+            || self->result == BROTLI_DECODER_RESULT_SUCCESS) {
+            size_t out_size = (size_t)(self->next_out - output);
+            if (out_size) {
+                memcpy(buf, output, out_size);
+                ret += out_size;
+            }
+            break;
+        } else if (self->result == BROTLI_DECODER_RESULT_NEEDS_MORE_INPUT) {
+            /* more input */
+            if (php_stream_eof(self->stream)) {
+                /* corrupt input */
+                break;
+            }
+            self->available_in = php_stream_read(self->stream, input, count);
+            self->next_in = input;
+        } else {
+            /* decoder error */
+            break;
+        }
+    }
+
+    if (input) {
+        efree(input);
+    }
+    if (output) {
+        efree(output);
+    }
+
+    return ret;
+}
+
+static int php_brotli_compress_close(php_stream *stream,
+                                     int close_handle TSRMLS_DC)
+{
+    STREAM_DATA_FROM_STREAM();
+
+    if (!self) {
+        return EOF;
+    }
+
+    const uint8_t *next_in = NULL;
+    size_t available_in = 0;
+
+    uint8_t *output = (uint8_t *)emalloc(brotli_buffer_size);
+
+    while (!BrotliEncoderIsFinished(self->cctx)) {
+        uint8_t *next_out = output;
+        size_t available_out = brotli_buffer_size;
+        if (BrotliEncoderCompressStream(self->cctx,
+                                        BROTLI_OPERATION_FINISH,
+                                        &available_in,
+                                        &next_in,
+                                        &available_out,
+                                        &next_out,
+                                        0)) {
+            size_t out_size = (size_t)(next_out - output);
+            if (out_size) {
+                php_stream_write(self->stream, output, out_size);
+            }
+        } else {
+            php_error_docref(NULL TSRMLS_CC, E_WARNING,
+                             "brotli compress error\n");
+        }
+    }
+
+    efree(output);
+
+    if (close_handle) {
+        if (self->stream) {
+            php_stream_close(self->stream);
+            self->stream = NULL;
+        }
+    }
+
+    if (self->cctx) {
+        BrotliEncoderDestroyInstance(self->cctx);
+        self->cctx = NULL;
+    }
+    if (self->output) {
+        efree(self->output);
+    }
+    efree(self);
+    stream->abstract = NULL;
+
+    return EOF;
+}
+
+static size_t php_brotli_compress_write(php_stream *stream,
+                                        const char *buf,
+                                        size_t count TSRMLS_DC)
+{
+    STREAM_DATA_FROM_STREAM();
+
+    size_t ret = 0;
+
+    size_t available_in = count;
+    const uint8_t *next_in = (uint8_t *)buf;
+
+    uint8_t *output = (uint8_t *)emalloc(brotli_buffer_size);
+    size_t available_out = brotli_buffer_size;
+    uint8_t *next_out = output;
+
+    if (BrotliEncoderCompressStream(self->cctx,
+                                    BROTLI_OPERATION_PROCESS,
+                                    &available_in,
+                                    &next_in,
+                                    &available_out,
+                                    &next_out,
+                                    0)) {
+        size_t out_size = (size_t)(next_out - output);
+        if (out_size) {
+            php_stream_write(self->stream, output, out_size);
+        }
+        ret += count;
+    } else {
+        php_error_docref(NULL TSRMLS_CC, E_WARNING, "brotli compress error\n");
+    }
+
+    efree(output);
+
+    return ret;
+}
+
+static php_stream_ops php_stream_brotli_read_ops = {
+    NULL,    /* write */
+    php_brotli_decompress_read,
+    php_brotli_decompress_close,
+    NULL,    /* flush */
+    STREAM_NAME,
+    NULL,    /* seek */
+    NULL,    /* cast */
+    NULL,    /* stat */
+    NULL     /* set_option */
+};
+
+static php_stream_ops php_stream_brotli_write_ops = {
+    php_brotli_compress_write,
+    NULL,    /* read */
+    php_brotli_compress_close,
+    NULL,    /* flush */
+    STREAM_NAME,
+    NULL,    /* seek */
+    NULL,    /* cast */
+    NULL,    /* stat */
+    NULL     /* set_option */
+};
+
+static php_stream *
+php_stream_brotli_opener(
+    php_stream_wrapper *wrapper,
+#if PHP_VERSION_ID < 50600
+    char *path,
+    char *mode,
+#else
+    const char *path,
+    const char *mode,
+#endif
+    int options,
+#if PHP_MAJOR_VERSION < 7
+    char **opened_path,
+#else
+    zend_string **opened_path,
+#endif
+    php_stream_context *context
+    STREAMS_DC TSRMLS_DC)
+{
+    php_brotli_stream_data *self;
+    int level = BROTLI_DEFAULT_QUALITY;
+    int compress;
+
+    if (strncasecmp(STREAM_NAME, path, sizeof(STREAM_NAME)-1) == 0) {
+        path += sizeof(STREAM_NAME)-1;
+        if (strncmp("://", path, 3) == 0) {
+            path += 3;
+        }
+    }
+
+    if (php_check_open_basedir(path TSRMLS_CC)) {
+        return NULL;
+    }
+
+    if (!strcmp(mode, "w") || !strcmp(mode, "wb")) {
+       compress = 1;
+    } else if (!strcmp(mode, "r") || !strcmp(mode, "rb")) {
+       compress = 0;
+    } else {
+        php_error_docref(NULL TSRMLS_CC, E_ERROR, "brotli: invalid open mode");
+        return NULL;
+    }
+
+    if (context) {
+#if PHP_MAJOR_VERSION >= 7
+        zval *tmpzval;
+
+        if (NULL != (tmpzval = php_stream_context_get_option(
+                         context, "brotli", "level"))) {
+            level = zval_get_long(tmpzval);
+        }
+#else
+        zval **tmpzval;
+
+        if (php_stream_context_get_option(
+                context, "brotli", "level", &tmpzval) == SUCCESS) {
+            convert_to_long_ex(tmpzval);
+            level = Z_LVAL_PP(tmpzval);
+        }
+#endif
+    }
+    if (level > BROTLI_MAX_QUALITY) {
+        php_error_docref(NULL TSRMLS_CC, E_WARNING,
+                         "brotli: compression level (%d) must be less than %d",
+                         level, BROTLI_MAX_QUALITY);
+        level = BROTLI_MAX_QUALITY;
+    }
+
+    self = ecalloc(sizeof(*self), 1);
+    self->stream = php_stream_open_wrapper(path, mode,
+                                           options | REPORT_ERRORS, NULL);
+    if (!self->stream) {
+        efree(self);
+        return NULL;
+    }
+
+    /* File */
+    if (compress) {
+        self->dctx = NULL;
+        self->cctx = BrotliEncoderCreateInstance(NULL, NULL, NULL);
+        if (!self->cctx) {
+            php_error_docref(NULL TSRMLS_CC, E_WARNING,
+                             "brotli: compression context failed");
+            php_stream_close(self->stream);
+            efree(self);
+            return NULL;
+        }
+        self->available_in = 0;
+        self->next_in = NULL;
+        self->available_out = 0;
+        self->next_out = NULL;
+        self->output = NULL;
+
+        int lgwin = BROTLI_DEFAULT_WINDOW;
+
+        BrotliEncoderSetParameter(self->cctx, BROTLI_PARAM_QUALITY, level);
+        BrotliEncoderSetParameter(self->cctx, BROTLI_PARAM_LGWIN, lgwin);
+
+        return php_stream_alloc(&php_stream_brotli_write_ops, self, NULL, mode);
+
+    } else {
+        self->cctx = NULL;
+        self->dctx = BrotliDecoderCreateInstance(NULL, NULL, NULL);
+        if (!self->dctx) {
+            php_error_docref(NULL TSRMLS_CC, E_WARNING,
+                             "brotli: decompression context failed");
+            php_stream_close(self->stream);
+            efree(self);
+            return NULL;
+        }
+
+        self->result = BROTLI_DECODER_RESULT_NEEDS_MORE_INPUT;
+
+        self->available_in = 0;
+        self->next_in = NULL;
+        self->available_out = 0;
+        self->next_out = NULL;
+        self->output = NULL;
+
+        return php_stream_alloc(&php_stream_brotli_read_ops, self, NULL, mode);
+    }
+    return NULL;
+}
+
+static php_stream_wrapper_ops brotli_stream_wops = {
+    php_stream_brotli_opener,
+    NULL,    /* close */
+    NULL,    /* fstat */
+    NULL,    /* stat */
+    NULL,    /* opendir */
+    STREAM_NAME,
+    NULL,    /* unlink */
+    NULL,    /* rename */
+    NULL,    /* mkdir */
+    NULL     /* rmdir */
+#if PHP_VERSION_ID >= 50400
+    , NULL
+#endif
+};
+
+php_stream_wrapper php_stream_brotli_wrapper = {
+    &brotli_stream_wops,
+    NULL,
+    0 /* is_url */
+};
+
 ZEND_MINIT_FUNCTION(brotli)
 {
 #if PHP_VERSION_ID > 50400
@@ -418,6 +795,10 @@ ZEND_MINIT_FUNCTION(brotli)
 
     REGISTER_INI_ENTRIES();
 #endif
+
+    php_register_url_stream_wrapper(STREAM_NAME,
+                                    &php_stream_brotli_wrapper TSRMLS_CC);
+
     return SUCCESS;
 }
 
@@ -560,11 +941,9 @@ static ZEND_FUNCTION(brotli_uncompress)
         RETURN_FALSE;
     }
 
-    const size_t kFileBufferSize = 65536;
-
     size_t available_in = in_size;
     const uint8_t *next_in = (const uint8_t *)in;
-    size_t buffer_size = kFileBufferSize;
+    size_t buffer_size = brotli_buffer_size;
     uint8_t *buffer = (uint8_t *)emalloc(buffer_size);
 
     BrotliDecoderResult result = BROTLI_DECODER_RESULT_NEEDS_MORE_OUTPUT;
