@@ -962,12 +962,11 @@ static ZEND_FUNCTION(brotli_uncompress)
 
     BrotliDecoderResult result = BROTLI_DECODER_RESULT_NEEDS_MORE_OUTPUT;
     while (result == BROTLI_DECODER_RESULT_NEEDS_MORE_OUTPUT) {
-      size_t available_out = buffer_size;
+        size_t available_out = buffer_size;
         uint8_t *next_out = buffer;
-        size_t total_out = 0;
         result = BrotliDecoderDecompressStream(state, &available_in, &next_in,
                                                &available_out, &next_out,
-                                               &total_out);
+                                               0);
         size_t used_out = buffer_size - available_out;
         if (used_out != 0) {
 #if ZEND_MODULE_API_NO >= 20141001
