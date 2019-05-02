@@ -36,6 +36,12 @@ ZEND_END_ARG_INFO()
 static zend_function_entry brotli_functions[] = {
     ZEND_FE(brotli_compress, arginfo_brotli_compress)
     ZEND_FE(brotli_uncompress, arginfo_brotli_uncompress)
+#if PHP_VERSION_ID > 50300 // PHP 5.3+
+    ZEND_NS_FALIAS(BROTLI_NS, compress,
+                   brotli_compress, arginfo_brotli_compress)
+    ZEND_NS_FALIAS(BROTLI_NS, uncompress,
+                   brotli_uncompress, arginfo_brotli_uncompress)
+#endif
     ZEND_FE_END
 };
 
