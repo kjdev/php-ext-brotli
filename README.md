@@ -38,7 +38,7 @@ brotli.ini:
 extension=brotli.so
 ```
 
-### Experimental output handler option
+### Output handler option
 
 Name                              | Default | Changeable
 --------------------------------- | ------- | ----------
@@ -60,6 +60,14 @@ brotli.output\_compression\_level | -1      | PHP\_INI\_ALL
     The default value of -1 uses internally defined values (11).
 
 > Available since PHP 5.4.0.
+
+## Constant
+
+Name                              | Description
+--------------------------------- | -----------
+BROTLI\_COMPRESS\_LEVEL\_MIN      | Minimal compress level value
+BROTLI\_COMPRESS\_LEVEL\_MAX      | Maximal compress level value
+BROTLI\_COMPRESS\_LEVEL\_DEFAULT  | Default compress level value
 
 ## Function
 
@@ -116,9 +124,26 @@ This function uncompress a compressed string.
 
 The original uncompressed data or FALSE on error.
 
-## Examples
+## Namespace
 
 ```
+Namespace Brotli;
+
+function compress( $data [, $quality = 11, $mode = -1 ] )
+function uncompress( $data [, $length = 0 ] )
+```
+
+`brotli_compress`, `brotli_uncompress` function alias.
+
+
+## Streams
+
+Brotli compression and uncompression are available using the
+`compress.brotli://` stream prefix.
+
+## Examples
+
+``` php
 $compressed = brotli_compress('Compresstest');
 
 $uncompressed = brotli_uncompress($compressed);
@@ -128,7 +153,7 @@ echo $uncompressed;
 
 ### Output handler
 
-```
+``` php
 ini_set('brotli.output_compression', 'On');
 // OR
 // ob_start('ob_brotli_handler');
@@ -137,3 +162,18 @@ echo ...;
 ```
 
 > "Accept-Encoding: br" must be specified.
+
+### Namespace
+
+``` php
+$data = \Brotli\compress('test');
+
+\Brotli\uncompress($data);
+```
+
+### Streams
+
+``` php
+file_put_contents("compress.brotli:///patch/to/data.br", $data);
+readfile("brotli.brotli:///patch/to/data.br");
+```
