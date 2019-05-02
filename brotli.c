@@ -126,6 +126,10 @@ static void php_brotli_encoder_destroy(php_brotli_context *ctx)
         BrotliEncoderDestroyInstance(ctx->state);
         ctx->state = NULL;
     }
+    if (ctx->output) {
+        efree(ctx->output);
+        ctx->output = NULL;
+    }
 }
 
 static int php_brotli_output_handler(void **handler_context,
@@ -200,7 +204,11 @@ static int php_brotli_output_handler(void **handler_context,
 
         if (output_context->op & PHP_OUTPUT_HANDLER_FINAL) {
             size_t size = (size_t)(ctx->next_out - ctx->output);
-            output_context->out.data = ctx->output;
+
+            uint8_t *data = (uint8_t *)emalloc(size);
+            memcpy(data, ctx->output, size);
+
+            output_context->out.data = data;
             output_context->out.used = size;
             output_context->out.free = 1;
 
