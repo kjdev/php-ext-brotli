@@ -793,6 +793,14 @@ ZEND_MINIT_FUNCTION(brotli)
     REGISTER_LONG_CONSTANT("BROTLI_FONT", BROTLI_MODE_FONT,
                            CONST_CS | CONST_PERSISTENT);
 
+    REGISTER_LONG_CONSTANT("BROTLI_COMPRESS_LEVEL_MIN", BROTLI_MIN_QUALITY,
+                           CONST_CS | CONST_PERSISTENT);
+    REGISTER_LONG_CONSTANT("BROTLI_COMPRESS_LEVEL_MAX", BROTLI_MAX_QUALITY,
+                           CONST_CS | CONST_PERSISTENT);
+    REGISTER_LONG_CONSTANT("BROTLI_COMPRESS_LEVEL_DEFAULT",
+                           BROTLI_DEFAULT_QUALITY,
+                           CONST_CS | CONST_PERSISTENT);
+
 #if PHP_VERSION_ID > 50400
     php_output_handler_alias_register(ZEND_STRL(PHP_BROTLI_OUTPUT_HANDLER),
                                       php_brotli_output_handler_init TSRMLS_CC);

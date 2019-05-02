@@ -15,7 +15,7 @@ if (roundtrip_files() === false) {
 include dirname(__FILE__) . '/files.inc';
 $files = roundtrip_files();
 
-$qualities = array(1, 6, 9, 11);
+$qualities = array(BROTLI_COMPRESS_LEVEL_MIN, 6, 9, BROTLI_COMPRESS_LEVEL_MAX);
 
 foreach ($files as $filename) {
     foreach ($qualities as $quality) {
@@ -37,7 +37,7 @@ foreach ($files as $filename) {
 }
 
 --EXPECTF--
-Roundtrip testing file alice29.txt at quality 1
+Roundtrip testing file alice29.txt at quality 0
   OK
 Roundtrip testing file alice29.txt at quality 6
   OK
@@ -45,7 +45,7 @@ Roundtrip testing file alice29.txt at quality 9
   OK
 Roundtrip testing file alice29.txt at quality 11
   OK
-Roundtrip testing file asyoulik.txt at quality 1
+Roundtrip testing file asyoulik.txt at quality 0
   OK
 Roundtrip testing file asyoulik.txt at quality 6
   OK
@@ -53,7 +53,7 @@ Roundtrip testing file asyoulik.txt at quality 9
   OK
 Roundtrip testing file asyoulik.txt at quality 11
   OK
-Roundtrip testing file lcet10.txt at quality 1
+Roundtrip testing file lcet10.txt at quality 0
   OK
 Roundtrip testing file lcet10.txt at quality 6
   OK
@@ -61,7 +61,7 @@ Roundtrip testing file lcet10.txt at quality 9
   OK
 Roundtrip testing file lcet10.txt at quality 11
   OK
-Roundtrip testing file plrabn12.txt at quality 1
+Roundtrip testing file plrabn12.txt at quality 0
   OK
 Roundtrip testing file plrabn12.txt at quality 6
   OK
@@ -69,7 +69,7 @@ Roundtrip testing file plrabn12.txt at quality 9
   OK
 Roundtrip testing file plrabn12.txt at quality 11
   OK
-Roundtrip testing file encode.c at quality 1
+Roundtrip testing file encode.c at quality 0
   OK
 Roundtrip testing file encode.c at quality 6
   OK
@@ -77,7 +77,7 @@ Roundtrip testing file encode.c at quality 9
   OK
 Roundtrip testing file encode.c at quality 11
   OK
-Roundtrip testing file dictionary.h at quality 1
+Roundtrip testing file dictionary.h at quality 0
   OK
 Roundtrip testing file dictionary.h at quality 6
   OK
@@ -85,7 +85,7 @@ Roundtrip testing file dictionary.h at quality 9
   OK
 Roundtrip testing file dictionary.h at quality 11
   OK
-Roundtrip testing file decode.c at quality 1
+Roundtrip testing file decode.c at quality 0
   OK
 Roundtrip testing file decode.c at quality 6
   OK
