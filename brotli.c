@@ -17,6 +17,16 @@
 #include "brotli/encode.h"
 #include "brotli/decode.h"
 
+#ifndef TSRMLS_C
+#define TSRMLS_C
+#endif
+#ifndef TSRMLS_CC
+#define TSRMLS_CC
+#endif
+#ifndef TSRMLS_DC
+#define TSRMLS_DC
+#endif
+
 ZEND_DECLARE_MODULE_GLOBALS(brotli);
 
 static ZEND_FUNCTION(brotli_compress);
