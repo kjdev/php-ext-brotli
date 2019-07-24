@@ -470,11 +470,19 @@ static int php_brotli_decompress_close(php_stream *stream,
     return EOF;
 }
 
+#if PHP_VERSION_ID < 70400
 static size_t php_brotli_decompress_read(php_stream *stream,
                                          char *buf,
                                          size_t count TSRMLS_DC)
 {
     size_t ret = 0;
+#else
+static ssize_t php_brotli_decompress_read(php_stream *stream,
+                                         char *buf,
+                                         size_t count TSRMLS_DC)
+{
+    ssize_t ret = 0;
+#endif
     STREAM_DATA_FROM_STREAM();
 
     /* input */
@@ -485,7 +493,11 @@ static size_t php_brotli_decompress_read(php_stream *stream,
             if (input) {
                 efree(input);
             }
+#if PHP_VERSION_ID < 70400
             return 0;
+#else
+            return -1;
+#endif
         }
         self->available_in = php_stream_read(self->stream, input,
                                              brotli_buffer_size );
@@ -592,13 +604,20 @@ static int php_brotli_compress_close(php_stream *stream,
     return EOF;
 }
 
+#if PHP_VERSION_ID < 70400
 static size_t php_brotli_compress_write(php_stream *stream,
                                         const char *buf,
                                         size_t count TSRMLS_DC)
 {
-    STREAM_DATA_FROM_STREAM();
-
     size_t ret = 0;
+#else
+static ssize_t php_brotli_compress_write(php_stream *stream,
+                                        const char *buf,
+                                        size_t count TSRMLS_DC)
+{
+    ssize_t ret = 0;
+#endif
+    STREAM_DATA_FROM_STREAM();
 
     size_t available_in = count;
     const uint8_t *next_in = (uint8_t *)buf;
