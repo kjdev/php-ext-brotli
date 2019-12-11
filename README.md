@@ -80,7 +80,7 @@ BROTLI\_COMPRESS\_LEVEL\_DEFAULT  | Default compress level value
 
 string **brotli\_compress** ( string _$data_ [, int _$quality_ = 11, int _$mode_ = -1 ] )
 
-This function compress the given string using the ZLIB data format.
+This function compress a string.
 
 ### Parameters
 
