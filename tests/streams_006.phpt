@@ -16,8 +16,8 @@ readfile("compress.brotli://https://github.com/google/brotli/raw/master/tests/te
 --EXPECTF--
 Warning: readfile(): https:// wrapper is disabled in the server configuration by allow_url_fopen=0 in %s
 
-Warning: readfile(https://github.com/google/brotli/raw/master/tests/testdata/x.compressed): failed to open stream: no suitable wrapper could be found in %s
+Warning: readfile(https://github.com/google/brotli/raw/master/tests/testdata/x.compressed): %sailed to open stream: no suitable wrapper could be found in %s
 
-Warning: readfile(compress.brotli://https://github.com/google/brotli/raw/master/tests/testdata/x.compressed): failed to open stream: operation failed in %s
+Warning: readfile(compress.brotli://https://github.com/google/brotli/raw/master/tests/testdata/x.compressed): %sailed to open stream: operation failed in %s
 
 ===DONE===
