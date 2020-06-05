@@ -623,24 +623,31 @@ static ssize_t php_brotli_compress_write(php_stream *stream,
     const uint8_t *next_in = (uint8_t *)buf;
 
     uint8_t *output = (uint8_t *)emalloc(brotli_buffer_size);
-    size_t available_out = brotli_buffer_size;
-    uint8_t *next_out = output;
 
-    if (BrotliEncoderCompressStream(self->cctx,
-                                    BROTLI_OPERATION_PROCESS,
-                                    &available_in,
-                                    &next_in,
-                                    &available_out,
-                                    &next_out,
-                                    0)) {
-        size_t out_size = (size_t)(next_out - output);
-        if (out_size) {
-            php_stream_write(self->stream, output, out_size);
+    while (available_in) {
+        size_t available_out = brotli_buffer_size;
+        uint8_t *next_out = output;
+
+        if (BrotliEncoderCompressStream(self->cctx,
+                                        BROTLI_OPERATION_PROCESS,
+                                        &available_in,
+                                        &next_in,
+                                        &available_out,
+                                        &next_out,
+                                        0)) {
+            size_t out_size = (size_t)(next_out - output);
+            if (out_size) {
+                php_stream_write(self->stream, output, out_size);
+            }
+        } else {
+            php_error_docref(NULL TSRMLS_CC, E_WARNING, "brotli compress error\n");
+#if PHP_VERSION_ID >= 70400
+            return -1;
+#endif
         }
-        ret += count;
-    } else {
-        php_error_docref(NULL TSRMLS_CC, E_WARNING, "brotli compress error\n");
     }
+
+    ret += count;
 
     efree(output);
 
