@@ -73,6 +73,10 @@ BROTLI\_COMPRESS\_LEVEL\_DEFAULT  | Default compress level value
 
 * brotli\_compress — Compress a string
 * brotli\_uncompress — Uncompress a compressed string
+* brotli\_compress\_init — Initialize an incremental compress context (PHP 7)
+* brotli\_compress\_add — Incrementally compress data (PHP 7)
+* brotli\_uncompress\_init — Initialize an incremental uncompress context (PHP 7)
+* brotli\_uncompress\_add — Incrementally uncompress data (PHP 7)
 
 ## brotli\_compress — Compress a string
 
@@ -124,6 +128,88 @@ This function uncompress a compressed string.
 
 The original uncompressed data or FALSE on error.
 
+## brotli\_compress\_init — Initialize an incremental compress context
+
+### Description
+
+string **brotli\_compress\_init** ( void )
+
+Initialize an incremental compress context. (PHP 7)
+
+### Return Values
+
+Returns a brotli context resource (brotli.state) on success,
+or FALSE on failure.
+
+## brotli\_compress\_add — Incrementally compress data
+
+### Description
+
+string **brotli\_compress\_add** ( resource _$context_, string _$data_ [, _$mode_ = BROTLI\_PROCESS ] )
+
+Incrementally compress data. (PHP 7)
+
+### Parameters
+
+* _context_
+
+  A context created with `brotli_compress_init()`.
+
+* _data_
+
+  A chunk of data to compress.
+
+* _mode_
+
+  One of `BROTLI_PROCESS` (default), `BROTLI_FINISH`.
+
+  `BROTLI_FINISH` to terminate with the last chunk of data.
+
+### Return Values
+
+Returns a chunk of compressed data, or FALSE on failure.
+
+## brotli\_uncompress\_init — Initialize an incremental uncompress context
+
+### Description
+
+string **brotli\_uncompress\_init** ( void )
+
+Initialize an incremental uncompress context. (PHP 7)
+
+### Return Values
+
+Returns a brotli context resource (brotli.state) on success,
+or FALSE on failure.
+
+## brotli\_uncompress\_add — Incrementally uncompress data
+
+### Description
+
+string **brotli\_uncompress\_add** ( resource _$context_, string _$data_ [, _$mode_ = BROTLI\_PROCESS ] )
+
+Incrementally uncompress data. (PHP 7)
+
+### Parameters
+
+* _context_
+
+  A context created with `brotli_uncompress_init()`.
+
+* _data_
+
+  A chunk of compressed data.
+
+* _mode_
+
+  One of `BROTLI_PROCESS` (default), `BROTLI_FINISH`.
+
+  `BROTLI_FINISH` to terminate with the last chunk of data.
+
+### Return Values
+
+Returns a chunk of uncompressed data, or FALSE on failure.
+
 ## Namespace
 
 ```
@@ -131,9 +217,13 @@ Namespace Brotli;
 
 function compress( $data [, $quality = 11, $mode = -1 ] )
 function uncompress( $data [, $length = 0 ] )
+function compress\_init()
+function compress\_add( resource $context, string $data [, $mode = BROTLI\_PROCESS] )
+function uncompress\_init()
+function uncompress\_add( resource $context, string $data [, $mode = BROTLI\_PROCESS] )
 ```
 
-`brotli_compress`, `brotli_uncompress` function alias.
+alias functions..
 
 
 ## Streams

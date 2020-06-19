@@ -37,6 +37,11 @@ extern zend_module_entry brotli_module_entry;
 typedef long zend_long;
 #endif
 
+typedef struct _php_brotli_state_context {
+    BrotliEncoderState *encoder;
+    BrotliDecoderState *decoder;
+} php_brotli_state_context;
+
 typedef struct _php_brotli_context {
     BrotliEncoderState *state;
     size_t available_in;

@@ -23,10 +23,20 @@
 #define TSRMLS_DC
 #endif
 
+#if PHP_VERSION_ID >= 70000
+int le_state;
+#endif
+
 ZEND_DECLARE_MODULE_GLOBALS(brotli);
 
 static ZEND_FUNCTION(brotli_compress);
 static ZEND_FUNCTION(brotli_uncompress);
+#if PHP_VERSION_ID >= 70000
+static ZEND_FUNCTION(brotli_compress_init);
+static ZEND_FUNCTION(brotli_compress_add);
+static ZEND_FUNCTION(brotli_uncompress_init);
+static ZEND_FUNCTION(brotli_uncompress_add);
+#endif
 
 ZEND_BEGIN_ARG_INFO_EX(arginfo_brotli_compress, 0, 0, 1)
     ZEND_ARG_INFO(0, data)
@@ -39,6 +49,26 @@ ZEND_BEGIN_ARG_INFO_EX(arginfo_brotli_uncompress, 0, 0, 1)
     ZEND_ARG_INFO(0, max)
 ZEND_END_ARG_INFO()
 
+#if PHP_VERSION_ID >= 70000
+ZEND_BEGIN_ARG_INFO_EX(arginfo_brotli_compress_init, 0, 0, 0)
+ZEND_END_ARG_INFO()
+
+ZEND_BEGIN_ARG_INFO_EX(arginfo_brotli_compress_add, 0, 0, 2)
+    ZEND_ARG_INFO(0, context)
+    ZEND_ARG_INFO(0, data)
+    ZEND_ARG_INFO(0, mode)
+ZEND_END_ARG_INFO()
+
+ZEND_BEGIN_ARG_INFO_EX(arginfo_brotli_uncompress_init, 0, 0, 0)
+ZEND_END_ARG_INFO()
+
+ZEND_BEGIN_ARG_INFO_EX(arginfo_brotli_uncompress_add, 0, 0, 2)
+    ZEND_ARG_INFO(0, context)
+    ZEND_ARG_INFO(0, data)
+    ZEND_ARG_INFO(0, mode)
+ZEND_END_ARG_INFO()
+#endif
+
 static zend_function_entry brotli_functions[] = {
     ZEND_FE(brotli_compress, arginfo_brotli_compress)
     ZEND_FE(brotli_uncompress, arginfo_brotli_uncompress)
@@ -48,10 +78,55 @@ static zend_function_entry brotli_functions[] = {
     ZEND_NS_FALIAS(BROTLI_NS, uncompress,
                    brotli_uncompress, arginfo_brotli_uncompress)
 #endif
+#if PHP_VERSION_ID >= 70000
+    ZEND_FE(brotli_compress_init, arginfo_brotli_compress_init)
+    ZEND_FE(brotli_compress_add, arginfo_brotli_compress_add)
+    ZEND_FE(brotli_uncompress_init, arginfo_brotli_uncompress_init)
+    ZEND_FE(brotli_uncompress_add, arginfo_brotli_uncompress_add)
+    ZEND_NS_FALIAS(BROTLI_NS, compress_init,
+                   brotli_compress_init, arginfo_brotli_compress_init)
+    ZEND_NS_FALIAS(BROTLI_NS, compress_add,
+                   brotli_compress_add, arginfo_brotli_compress_add)
+    ZEND_NS_FALIAS(BROTLI_NS, uncompress_init,
+                   brotli_uncompress_init, arginfo_brotli_uncompress_init)
+    ZEND_NS_FALIAS(BROTLI_NS, uncompress_add,
+                   brotli_uncompress_add, arginfo_brotli_uncompress_add)
+#endif
     ZEND_FE_END
 };
 
 static const size_t brotli_buffer_size = 1 << 19;
+
+#if PHP_VERSION_ID >= 70000
+static php_brotli_state_context* php_brotli_state_init(void)
+{
+    php_brotli_state_context *ctx
+        = (php_brotli_state_context *)ecalloc(1,
+                                              sizeof(php_brotli_state_context));
+    ctx->encoder = NULL;
+    ctx->decoder = NULL;
+    return ctx;
+}
+
+static void php_brotli_state_destroy(php_brotli_state_context *ctx)
+{
+    if (ctx->encoder) {
+        BrotliEncoderDestroyInstance(ctx->encoder);
+        ctx->encoder = NULL;
+    }
+    if (ctx->decoder) {
+        BrotliDecoderDestroyInstance(ctx->decoder);
+        ctx->decoder = NULL;
+    }
+    efree(ctx);
+}
+
+static void php_brotli_state_rsrc_dtor(zend_resource *res)
+{
+    php_brotli_state_context *ctx = zend_fetch_resource(res, NULL, le_state);
+    php_brotli_state_destroy(ctx);
+}
+#endif
 
 #if PHP_VERSION_ID > 50400 // Output Handler: 5.4+
 
@@ -851,6 +926,17 @@ ZEND_MINIT_FUNCTION(brotli)
                            BROTLI_DEFAULT_QUALITY,
                            CONST_CS | CONST_PERSISTENT);
 
+#if PHP_VERSION_ID >= 70000
+    REGISTER_LONG_CONSTANT("BROTLI_PROCESS", BROTLI_OPERATION_PROCESS,
+                           CONST_CS | CONST_PERSISTENT);
+    REGISTER_LONG_CONSTANT("BROTLI_FINISH", BROTLI_OPERATION_FINISH,
+                           CONST_CS | CONST_PERSISTENT);
+
+    le_state = zend_register_list_destructors_ex(php_brotli_state_rsrc_dtor,
+                                                 NULL, "brotli.state",
+                                                 module_number);
+#endif
+
 #if PHP_VERSION_ID > 50400
     php_output_handler_alias_register(ZEND_STRL(PHP_BROTLI_OUTPUT_HANDLER),
                                       php_brotli_output_handler_init TSRMLS_CC);
@@ -859,6 +945,7 @@ ZEND_MINIT_FUNCTION(brotli)
 
     REGISTER_INI_ENTRIES();
 #endif
+
 
     php_register_url_stream_wrapper(STREAM_NAME,
                                     &php_stream_brotli_wrapper TSRMLS_CC);
@@ -980,6 +1067,127 @@ static ZEND_FUNCTION(brotli_compress)
     efree(out);
 }
 
+#if PHP_VERSION_ID >= 70000
+static ZEND_FUNCTION(brotli_compress_init)
+{
+    php_brotli_state_context *ctx;
+
+    if (zend_parse_parameters_none() == FAILURE) {
+        RETURN_FALSE;
+    }
+
+    ctx = php_brotli_state_init();
+
+    ctx->encoder = BrotliEncoderCreateInstance(NULL, NULL, NULL);
+    if (!ctx->encoder) {
+        php_error_docref(NULL TSRMLS_CC, E_WARNING,
+                         "Brotli incremental compress init failed\n");
+        RETURN_FALSE;
+    }
+
+    long quality = BROTLI_G(output_compression_level);
+    if (quality < BROTLI_MIN_QUALITY || quality > BROTLI_MAX_QUALITY) {
+        quality = BROTLI_DEFAULT_QUALITY;
+    }
+    int lgwin = BROTLI_DEFAULT_WINDOW;
+
+    BrotliEncoderSetParameter(ctx->encoder, BROTLI_PARAM_QUALITY, quality);
+    BrotliEncoderSetParameter(ctx->encoder, BROTLI_PARAM_LGWIN, lgwin);
+
+    RETURN_RES(zend_register_resource(ctx, le_state));
+}
+
+static ZEND_FUNCTION(brotli_compress_add)
+{
+    zval *res;
+    php_brotli_state_context *ctx;
+    size_t buffer_size, buffer_used;
+    zend_long mode = BROTLI_OPERATION_PROCESS;
+    char *in_buf;
+    size_t in_size;
+    smart_string out = {0};
+
+    if (zend_parse_parameters(ZEND_NUM_ARGS(), "rs|l",
+                              &res, &in_buf, &in_size, &mode) != SUCCESS) {
+        RETURN_FALSE;
+    }
+
+    ctx = zend_fetch_resource(Z_RES_P(res), NULL, le_state);
+    if (ctx == NULL || ctx->encoder == NULL) {
+        php_error_docref(NULL TSRMLS_CC, E_WARNING,
+                         "Brotli incremental compress resource failed\n");
+        RETURN_FALSE;
+    }
+
+    buffer_size = BrotliEncoderMaxCompressedSize(in_size);
+    buffer_size = (buffer_size < 64) ? 64 : buffer_size;
+    uint8_t *buffer = (uint8_t *)emalloc(buffer_size);
+    if (!buffer) {
+        php_error_docref(NULL TSRMLS_CC, E_WARNING,
+                         "Brotli incremental compress buffer failed\n");
+        RETURN_FALSE;
+    }
+
+    const uint8_t *next_in = in_buf;
+    size_t available_in = in_size;
+
+    if (in_size > 0) {
+        while (available_in) {
+            size_t available_out = buffer_size;
+            uint8_t *next_out = buffer;
+            if (BrotliEncoderCompressStream(ctx->encoder,
+                                            mode,
+                                            &available_in,
+                                            &next_in,
+                                            &available_out,
+                                            &next_out,
+                                            0)) {
+                buffer_used = (size_t)(next_out - buffer);
+                if (buffer_used) {
+                    smart_string_appendl(&out, buffer, buffer_used);
+                }
+            } else {
+                efree(buffer);
+                smart_string_free(&out);
+                php_error_docref(NULL TSRMLS_CC, E_WARNING,
+                                 "Brotli incremental compress failed\n");
+                RETURN_FALSE;
+            }
+        }
+    }
+
+    if (mode == BROTLI_OPERATION_FINISH) {
+        while (!BrotliEncoderIsFinished(ctx->encoder)) {
+            size_t available_out = buffer_size;
+            uint8_t *next_out = buffer;
+            if (BrotliEncoderCompressStream(ctx->encoder,
+                                            BROTLI_OPERATION_FINISH,
+                                            &available_in,
+                                            &next_in,
+                                            &available_out,
+                                            &next_out,
+                                            0)) {
+                buffer_used = (size_t)(next_out - buffer);
+                if (buffer_used) {
+                    smart_string_appendl(&out, buffer, buffer_used);
+                }
+            } else {
+                efree(buffer);
+                smart_string_free(&out);
+                php_error_docref(NULL TSRMLS_CC, E_WARNING,
+                                 "Brotli incremental compress failed\n");
+                RETURN_FALSE;
+            }
+        }
+    }
+
+    RETVAL_STRINGL(out.c, out.len);
+
+    efree(buffer);
+    smart_string_free(&out);
+}
+#endif
+
 static ZEND_FUNCTION(brotli_uncompress)
 {
     long max_size = 0;
@@ -1056,3 +1264,82 @@ static ZEND_FUNCTION(brotli_uncompress)
     smart_str_free(&out);
 #endif
 }
+
+#if PHP_VERSION_ID >= 70000
+static ZEND_FUNCTION(brotli_uncompress_init)
+{
+    php_brotli_state_context *ctx;
+
+    if (zend_parse_parameters_none() == FAILURE) {
+        RETURN_FALSE;
+    }
+
+    ctx = php_brotli_state_init();
+
+    ctx->decoder = BrotliDecoderCreateInstance(NULL, NULL, NULL);
+    if (!ctx->decoder) {
+        php_error_docref(NULL TSRMLS_CC, E_WARNING,
+                         "Brotli incremental uncompress init failed\n");
+        RETURN_FALSE;
+    }
+
+    RETURN_RES(zend_register_resource(ctx, le_state));
+}
+
+static ZEND_FUNCTION(brotli_uncompress_add)
+{
+    zval *res;
+    php_brotli_state_context *ctx;
+    size_t buffer_size, buffer_used;
+    zend_long mode = BROTLI_OPERATION_PROCESS;
+    char *in_buf;
+    size_t in_size;
+    smart_string out = {0};
+
+    if (zend_parse_parameters(ZEND_NUM_ARGS(), "rs|l",
+                              &res, &in_buf, &in_size, &mode) != SUCCESS) {
+        RETURN_FALSE;
+    }
+
+    ctx = zend_fetch_resource(Z_RES_P(res), NULL, le_state);
+    if (ctx == NULL || ctx->decoder == NULL) {
+        php_error_docref(NULL TSRMLS_CC, E_WARNING,
+                         "Brotli incremental uncompress resource failed\n");
+        RETURN_FALSE;
+    }
+
+    if (in_size <= 0 && mode != BROTLI_OPERATION_FINISH) {
+        RETURN_EMPTY_STRING();
+    }
+
+    buffer_size = brotli_buffer_size;
+    uint8_t *buffer = (uint8_t *)emalloc(buffer_size);
+    if (!buffer) {
+        php_error_docref(NULL TSRMLS_CC, E_WARNING,
+                         "Brotli incremental uncompress buffer failed\n");
+        RETURN_FALSE;
+    }
+
+    const uint8_t *next_in = (const uint8_t *)in_buf;
+    size_t available_in = in_size;
+
+    BrotliDecoderResult result = BROTLI_DECODER_RESULT_NEEDS_MORE_OUTPUT;
+    while (result == BROTLI_DECODER_RESULT_NEEDS_MORE_OUTPUT) {
+        size_t available_out = buffer_size;
+        uint8_t *next_out = buffer;
+        result = BrotliDecoderDecompressStream(ctx->decoder,
+                                               &available_in, &next_in,
+                                               &available_out, &next_out,
+                                               0);
+        size_t buffer_used = buffer_size - available_out;
+        if (buffer_used) {
+            smart_string_appendl(&out, buffer, buffer_used);
+        }
+    }
+
+    RETVAL_STRINGL(out.c, out.len);
+
+    efree(buffer);
+    smart_string_free(&out);
+}
+#endif
