@@ -13,10 +13,6 @@
 #endif
 #include "php_brotli.h"
 
-/* brotli */
-#include "brotli/encode.h"
-#include "brotli/decode.h"
-
 #ifndef TSRMLS_C
 #define TSRMLS_C
 #endif
@@ -60,15 +56,6 @@ static const size_t brotli_buffer_size = 1 << 19;
 #if PHP_VERSION_ID > 50400 // Output Handler: 5.4+
 
 #define PHP_BROTLI_OUTPUT_HANDLER "ob_brotli_handler"
-
-typedef struct _php_brotli_context {
-    BrotliEncoderState *state;
-    size_t available_in;
-    const uint8_t *next_in;
-    size_t available_out;
-    uint8_t *next_out;
-    uint8_t *output;
-} php_brotli_context;
 
 static int php_brotli_output_encoding(void)
 {
@@ -161,7 +148,7 @@ static int php_brotli_output_handler(void **handler_context,
         return FAILURE;
     }
 
-    if (!BROTLI_G(output_compression)) {
+    if (!BROTLI_G(output_compression) || !BROTLI_G(ob_handler)) {
         return FAILURE;
     }
 
@@ -230,9 +217,6 @@ static int php_brotli_output_handler(void **handler_context,
                 sapi_add_header_ex(ZEND_STRL("Vary: Accept-Encoding"),
                                    1, 0 TSRMLS_CC);
             }
-
-            // reset
-            BROTLI_G(output_compression) = 0;
         }
     } else {
         php_brotli_encoder_destroy(ctx);
@@ -274,7 +258,10 @@ static void php_brotli_output_handler_context_dtor(void *opaq TSRMLS_DC)
             efree(ctx->output);
         }
         efree(ctx);
+        ctx = NULL;
     }
+
+    BROTLI_G(handler_registered) = 0;
 }
 
 static php_output_handler*
@@ -287,8 +274,6 @@ php_brotli_output_handler_init(const char *handler_name,
     TSRMLS_FETCH();
 #endif
 
-    BROTLI_G(handler_registered) = 1;
-
     handler = php_output_handler_create_internal(handler_name, handler_name_len,
                                                  php_brotli_output_handler,
                                                  chunk_size, flags TSRMLS_CC);
@@ -296,14 +281,34 @@ php_brotli_output_handler_init(const char *handler_name,
         return NULL;
     }
 
+    BROTLI_G(handler_registered) = 1;
+
+    if (!BROTLI_G(ob_handler)) {
+        BROTLI_G(ob_handler) = php_brotli_output_handler_context_init();
+    }
+
     php_output_handler_set_context(handler,
-                                   php_brotli_output_handler_context_init(),
+                                   BROTLI_G(ob_handler),
                                    php_brotli_output_handler_context_dtor
                                    TSRMLS_CC);
 
     BROTLI_G(output_compression) = 1;
 
     return handler;
+}
+
+static void php_brotli_cleanup_ob_handler_mess(void)
+{
+#if PHP_MAJOR_VERSION < 7
+    TSRMLS_FETCH();
+#endif
+
+    if (BROTLI_G(ob_handler)) {
+        php_brotli_output_handler_context_dtor(
+            (void *) BROTLI_G(ob_handler) TSRMLS_CC
+        );
+        BROTLI_G(ob_handler) = NULL;
+    }
 }
 
 static void php_brotli_output_compression_start(void)
@@ -420,6 +425,7 @@ static void php_brotli_init_globals(zend_brotli_globals *brotli_globals)
 {
     brotli_globals->handler_registered = 0;
     brotli_globals->compression_coding = 0;
+    brotli_globals->ob_handler = NULL;
 }
 #endif
 
@@ -882,6 +888,9 @@ ZEND_RINIT_FUNCTION(brotli)
 ZEND_RSHUTDOWN_FUNCTION(brotli)
 {
 #if PHP_VERSION_ID > 50400
+    if (BROTLI_G(handler_registered)) {
+        php_brotli_cleanup_ob_handler_mess();
+    }
     BROTLI_G(handler_registered) = 0;
 #endif
     return SUCCESS;
