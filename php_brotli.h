@@ -9,6 +9,10 @@ extern "C" {
 #define BROTLI_EXT_VERSION "0.8.0"
 #define BROTLI_NS "Brotli"
 
+/* brotli */
+#include "brotli/encode.h"
+#include "brotli/decode.h"
+
 extern zend_module_entry brotli_module_entry;
 #define phpext_brotli_ptr &brotli_module_entry
 
@@ -33,12 +37,22 @@ extern zend_module_entry brotli_module_entry;
 typedef long zend_long;
 #endif
 
+typedef struct _php_brotli_context {
+    BrotliEncoderState *state;
+    size_t available_in;
+    const uint8_t *next_in;
+    size_t available_out;
+    uint8_t *next_out;
+    uint8_t *output;
+} php_brotli_context;
+
 ZEND_BEGIN_MODULE_GLOBALS(brotli)
 #if PHP_VERSION_ID > 50400 // Output Handler: 5.4+
   zend_long output_compression;
   zend_long output_compression_level;
   zend_bool handler_registered;
   int compression_coding;
+  php_brotli_context *ob_handler;
 #endif
 ZEND_END_MODULE_GLOBALS(brotli)
 
