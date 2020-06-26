@@ -78,15 +78,16 @@ BROTLI\_COMPRESS\_LEVEL\_DEFAULT  | Default compress level value
 * brotli\_uncompress\_init — Initialize an incremental uncompress context (PHP 7)
 * brotli\_uncompress\_add — Incrementally uncompress data (PHP 7)
 
-## brotli\_compress — Compress a string
+---
+### brotli\_compress — Compress a string
 
-### Description
+#### Description
 
 string **brotli\_compress** ( string _$data_ [, int _$quality_ = 11, int _$mode_ = -1 ] )
 
 This function compress a string.
 
-### Parameters
+#### Parameters
 
 * _data_
 
@@ -102,19 +103,20 @@ This function compress a string.
   The compression mode can be `BROTLI_GENERIC` (default),
   `BROTLI_TEXT` (for UTF-8 format text input) or `BROTLI_FONT` (for WOFF 2.0).
 
-### Return Values
+#### Return Values
 
 The compressed string or FALSE if an error occurred.
 
+---
 ### brotli\_uncompress — Uncompress a compressed string
 
-### Description
+#### Description
 
 string **brotli\_uncompress** ( string _$data_ [, int _$length_ = 0 ] )
 
 This function uncompress a compressed string.
 
-### Parameters
+#### Parameters
 
 * _data_
 
@@ -124,32 +126,34 @@ This function uncompress a compressed string.
 
   The maximum length of data to decode.
 
-### Return Values
+#### Return Values
 
 The original uncompressed data or FALSE on error.
 
-## brotli\_compress\_init — Initialize an incremental compress context
+---
+### brotli\_compress\_init — Initialize an incremental compress context
 
-### Description
+#### Description
 
 string **brotli\_compress\_init** ( void )
 
 Initialize an incremental compress context. (PHP 7)
 
-### Return Values
+#### Return Values
 
 Returns a brotli context resource (brotli.state) on success,
 or FALSE on failure.
 
-## brotli\_compress\_add — Incrementally compress data
+---
+### brotli\_compress\_add — Incrementally compress data
 
-### Description
+#### Description
 
 string **brotli\_compress\_add** ( resource _$context_, string _$data_ [, _$mode_ = BROTLI\_PROCESS ] )
 
 Incrementally compress data. (PHP 7)
 
-### Parameters
+#### Parameters
 
 * _context_
 
@@ -165,32 +169,34 @@ Incrementally compress data. (PHP 7)
 
   `BROTLI_FINISH` to terminate with the last chunk of data.
 
-### Return Values
+#### Return Values
 
 Returns a chunk of compressed data, or FALSE on failure.
 
-## brotli\_uncompress\_init — Initialize an incremental uncompress context
+---
+### brotli\_uncompress\_init — Initialize an incremental uncompress context
 
-### Description
+#### Description
 
 string **brotli\_uncompress\_init** ( void )
 
 Initialize an incremental uncompress context. (PHP 7)
 
-### Return Values
+#### Return Values
 
 Returns a brotli context resource (brotli.state) on success,
 or FALSE on failure.
 
-## brotli\_uncompress\_add — Incrementally uncompress data
+---
+### brotli\_uncompress\_add — Incrementally uncompress data
 
-### Description
+#### Description
 
 string **brotli\_uncompress\_add** ( resource _$context_, string _$data_ [, _$mode_ = BROTLI\_PROCESS ] )
 
 Incrementally uncompress data. (PHP 7)
 
-### Parameters
+#### Parameters
 
 * _context_
 
@@ -206,7 +212,7 @@ Incrementally uncompress data. (PHP 7)
 
   `BROTLI_FINISH` to terminate with the last chunk of data.
 
-### Return Values
+#### Return Values
 
 Returns a chunk of uncompressed data, or FALSE on failure.
 
@@ -266,4 +272,26 @@ $data = \Brotli\compress('test');
 ``` php
 file_put_contents("compress.brotli:///patch/to/data.br", $data);
 readfile("brotli.brotli:///patch/to/data.br");
+```
+
+### Incrementally
+
+```php
+// compression
+$resource = brotli_compress_init();
+$compressed = '';
+$compressed .= brotli_compress_add($resource, 'Hello, ', BROTLI_PROCESS);
+$compressed .= brotli_compress_add($resource, 'World!', BROTLI_PROCESS);
+$compressed .= brotli_compress_add($resource, '', BROTLI_FINISH);
+
+echo brotli_uncompress($compressed), PHP_EOL; // Hello, World!
+
+// uncompression
+$resource = brotli_uncompress_init();
+$uncompressed = '';
+$uncompressed .= brotli_uncompress_add($resource, substr($compressed, 0, 5), BROTLI_PROCESS);
+$uncompressed .= brotli_uncompress_add($resource, substr($compressed, 5), BROTLI_PROCESS);
+$uncompressed .= brotli_uncompress_add($resource, '', BROTLI_FINISH);
+
+echo $uncompressed, PHP_EOL; // Hello, World!
 ```
