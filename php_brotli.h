@@ -43,7 +43,7 @@ typedef struct _php_brotli_state_context {
 } php_brotli_state_context;
 
 typedef struct _php_brotli_context {
-    BrotliEncoderState *state;
+    php_brotli_state_context state;
     size_t available_in;
     const uint8_t *next_in;
     size_t available_out;
