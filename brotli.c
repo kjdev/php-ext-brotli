@@ -221,6 +221,11 @@ static void php_brotli_encoder_destroy(php_brotli_context *ctx)
         efree(ctx->output);
         ctx->output = NULL;
     }
+
+    ctx->available_in = 0;
+    ctx->next_in = NULL;
+    ctx->available_out = 0;
+    ctx->next_out = NULL;
 }
 
 static int php_brotli_output_handler(void **handler_context,
@@ -259,17 +264,16 @@ static int php_brotli_output_handler(void **handler_context,
             if (!ctx->output) {
                 ctx->output = (uint8_t *)emalloc(size);
                 ctx->available_out = size;
-                ctx->next_out = ctx->output;
             } else {
                 ctx->available_out += size;
                 ctx->output = (uint8_t *)erealloc(ctx->output,
                                                   ctx->available_out);
-                if (!ctx->output) {
-                    php_brotli_encoder_destroy(ctx);
-                    return FAILURE;
-                }
-                ctx->next_out = ctx->output;
             }
+            if (!ctx->output) {
+                php_brotli_encoder_destroy(ctx);
+                return FAILURE;
+            }
+            ctx->next_out = ctx->output;
 
             // append input
             ctx->available_in = output_context->in.used;
@@ -349,14 +353,12 @@ static void php_brotli_output_handler_context_dtor(void *opaq TSRMLS_DC)
 
     if (ctx) {
         php_brotli_encoder_destroy(ctx);
-        if (ctx->output) {
-            efree(ctx->output);
-        }
         efree(ctx);
         ctx = NULL;
     }
 
     BROTLI_G(handler_registered) = 0;
+    BROTLI_G(ob_handler) = NULL;
 }
 
 static php_output_handler*
