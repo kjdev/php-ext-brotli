@@ -211,7 +211,7 @@ static int php_brotli_output_encoding(void)
     return BROTLI_G(compression_coding);
 }
 
-static void php_brotli_encoder_destroy(php_brotli_context *ctx)
+static void php_brotli_context_close(php_brotli_context *ctx)
 {
     if (ctx->state.encoder) {
         BrotliEncoderDestroyInstance(ctx->state.encoder);
@@ -270,7 +270,7 @@ static int php_brotli_output_handler(void **handler_context,
                                                   ctx->available_out);
             }
             if (!ctx->output) {
-                php_brotli_encoder_destroy(ctx);
+                php_brotli_context_close(ctx);
                 return FAILURE;
             }
             ctx->next_out = ctx->output;
@@ -293,7 +293,7 @@ static int php_brotli_output_handler(void **handler_context,
                                          &ctx->available_out,
                                          &ctx->next_out,
                                          NULL)) {
-            php_brotli_encoder_destroy(ctx);
+            php_brotli_context_close(ctx);
             return FAILURE;
         }
 
@@ -307,7 +307,7 @@ static int php_brotli_output_handler(void **handler_context,
             output_context->out.used = size;
             output_context->out.free = 1;
 
-            php_brotli_encoder_destroy(ctx);
+            php_brotli_context_close(ctx);
 
             if (!SG(headers_sent)) {
                 sapi_add_header_ex(ZEND_STRL("Content-Encoding: br"),
@@ -317,7 +317,7 @@ static int php_brotli_output_handler(void **handler_context,
             }
         }
     } else {
-        php_brotli_encoder_destroy(ctx);
+        php_brotli_context_close(ctx);
 
         if (output_context->op & PHP_OUTPUT_HANDLER_FINAL) {
             // discard
@@ -352,7 +352,7 @@ static void php_brotli_output_handler_context_dtor(void *opaq TSRMLS_DC)
     php_brotli_context *ctx = (php_brotli_context *)opaq;
 
     if (ctx) {
-        php_brotli_encoder_destroy(ctx);
+        php_brotli_context_close(ctx);
         efree(ctx);
         ctx = NULL;
     }
