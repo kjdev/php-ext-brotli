@@ -258,6 +258,11 @@ static int php_brotli_output_handler(void **handler_context,
     }
 
     if (!(output_context->op & PHP_OUTPUT_HANDLER_CLEAN)) {
+        if (SG(headers_sent)) {
+            php_brotli_context_close(ctx);
+            return FAILURE;
+        }
+
         if (output_context->in.used) {
             size_t size
                 = BrotliEncoderMaxCompressedSize(output_context->in.used);
@@ -309,12 +314,10 @@ static int php_brotli_output_handler(void **handler_context,
 
             php_brotli_context_close(ctx);
 
-            if (!SG(headers_sent)) {
-                sapi_add_header_ex(ZEND_STRL("Content-Encoding: br"),
-                                   1, 1 TSRMLS_CC);
-                sapi_add_header_ex(ZEND_STRL("Vary: Accept-Encoding"),
-                                   1, 0 TSRMLS_CC);
-            }
+            sapi_add_header_ex(ZEND_STRL("Content-Encoding: br"),
+                               1, 1 TSRMLS_CC);
+            sapi_add_header_ex(ZEND_STRL("Vary: Accept-Encoding"),
+                               1, 0 TSRMLS_CC);
         }
     } else {
         php_brotli_context_close(ctx);
