@@ -1,11 +1,12 @@
 ARG_ENABLE("brotli", "enable brotli support", "yes");
 
 if (PHP_BROTLI != "no") {
-  if (CHECK_LIB("libbrotlicommon.lib", "brotli", PHP_BROTLI) &&
-      CHECK_LIB("libbrotlidec.lib", "brotli", PHP_BROTLI) &&
-      CHECK_LIB("libbrotlienc.lib", "brotli", PHP_BROTLI)) {
+  if (CHECK_LIB("brotlicommon.lib;libbrotlicommon.lib", "brotli", PHP_BROTLI) &&
+      CHECK_LIB("brotlidec.lib;libbrotlidec.lib", "brotli", PHP_BROTLI) &&
+      CHECK_LIB("brotlienc.lib;libbrotlienc.lib", "brotli", PHP_BROTLI) &&
+      CHECK_HEADER_ADD_INCLUDE("brotli/encode.h", "CFLAGS_BROTLI", PHP_BROTLI)) {
     EXTENSION("brotli", "brotli.c", PHP_BROTLI_SHARED);
-    AC_DEFINE('BROTLI_LIB_VERSION', '-', 'system library version');
+    AC_DEFINE('BROTLI_LIB_VERSION', '1.0.7', 'system library version');
   } else {
     EXTENSION("brotli", "brotli.c", PHP_BROTLI_SHARED);
     ADD_SOURCES("brotli/c/common", "dictionary.c transform.c", "brotli");

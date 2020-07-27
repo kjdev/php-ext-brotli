@@ -6,37 +6,53 @@ image: Visual Studio 2017
 clone_folder: c:\projects\brotli
 environment:
   BIN_SDK_VER: 2.2.0
-  # DEP: brotli-1.0.7
   matrix:
     - PHP_VER: 7.2.32
       ARCH: x64
       TS: 0
       VC: vc15
+      VCPKG: 0
     - PHP_VER: 7.2.32
       ARCH: x86
       TS: 1
       VC: vc15
+      VCPKG: 0
     - PHP_VER: 7.3.20
       ARCH: x64
       TS: 0
       VC: vc15
+      VCPKG: 0
     - PHP_VER: 7.3.20
       ARCH: x86
       TS: 1
       VC: vc15
+      VCPKG: 0
     - PHP_VER: 7.4.8
       ARCH: x64
       TS: 0
       VC: vc15
+      VCPKG: 0
     - PHP_VER: 7.4.8
       ARCH: x86
       TS: 1
       VC: vc15
+      VCPKG: 0
+    - PHP_VER: 7.4.8
+      ARCH: x64
+      TS: 0
+      VC: vc15
+      VCPKG: 1
+    - PHP_VER: 7.4.8
+      ARCH: x86
+      TS: 1
+      VC: vc15
+      VCPKG: 1
 cache:
   - c:\build-cache -> .appveyor.yml, .appveyor\install.ps1
 install:
-  - git submodule update --init --recursive
   - ps: .appveyor\install.ps1
+  - ps: .appveyor\install_submodule.ps1
+  - ps: .appveyor\install_vcpkg.ps1
 
 # build configuration
 build_script:
