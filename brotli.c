@@ -413,7 +413,6 @@ static void php_brotli_cleanup_ob_handler_mess(void)
 
 static void php_brotli_output_compression_start(void)
 {
-    zval zoh;
     php_output_handler *h;
 #if PHP_MAJOR_VERSION < 7
     TSRMLS_FETCH();
@@ -439,7 +438,6 @@ static void php_brotli_output_compression_start(void)
 static PHP_INI_MH(OnUpdate_brotli_output_compression)
 {
     int int_value, status;
-    char *ini_value;
     zend_long *p;
 #ifndef ZTS
     char *base = (char *)mh_arg2;
