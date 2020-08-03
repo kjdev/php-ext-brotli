@@ -1004,7 +1004,15 @@ ZEND_MINFO_FUNCTION(brotli)
     php_info_print_table_start();
     php_info_print_table_row(2, "Brotli support", "enabled");
     php_info_print_table_row(2, "Extension Version", BROTLI_EXT_VERSION);
+#ifdef BROTLI_LIB_VERSION
     php_info_print_table_row(2, "Library Version", BROTLI_LIB_VERSION);
+#else
+    uint32_t version = BrotliEncoderVersion();
+    char buffer[64];
+    snprintf(buffer, sizeof(buffer), "%d.%d.%d",
+             version >> 24, (version >> 12) & 0xfff, version & 0xfff);
+    php_info_print_table_row(2, "Library Version", buffer);
+#endif
     php_info_print_table_end();
 }
 
