@@ -6,7 +6,7 @@ extern "C" {
 #endif
 
 /* Don't forget to check BROTLI_LIB_VERSION in config.m4/w32 */
-#define BROTLI_EXT_VERSION "0.10.0"
+#define BROTLI_EXT_VERSION "0.11.0"
 #define BROTLI_NS "Brotli"
 
 /* brotli */
