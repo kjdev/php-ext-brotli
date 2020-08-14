@@ -38,7 +38,7 @@ brotli.ini:
 ```
 extension=brotli.so
 ```
-
+$ phpenmod brotli
 ### Output handler option
 
 Name                              | Default | Changeable
