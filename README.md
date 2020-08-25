@@ -33,7 +33,7 @@ RPM packages of this extension are available in [» Remi's RPM repository](https
 
 ## Configuration
 
-brotli.ini:
+php.ini:
 
 ```
 extension=brotli.so
