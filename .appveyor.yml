@@ -7,42 +7,42 @@ clone_folder: c:\projects\brotli
 environment:
   BIN_SDK_VER: 2.2.0
   matrix:
-    - PHP_VER: 7.2.32
+    - PHP_VER: 7.2
       ARCH: x64
       TS: 0
       VC: vc15
       VCPKG: 0
-    - PHP_VER: 7.2.32
+    - PHP_VER: 7.2
       ARCH: x86
       TS: 1
       VC: vc15
       VCPKG: 0
-    - PHP_VER: 7.3.20
+    - PHP_VER: 7.3
       ARCH: x64
       TS: 0
       VC: vc15
       VCPKG: 0
-    - PHP_VER: 7.3.20
+    - PHP_VER: 7.3
       ARCH: x86
       TS: 1
       VC: vc15
       VCPKG: 0
-    - PHP_VER: 7.4.8
+    - PHP_VER: 7.4
       ARCH: x64
       TS: 0
       VC: vc15
       VCPKG: 0
-    - PHP_VER: 7.4.8
+    - PHP_VER: 7.4
       ARCH: x86
       TS: 1
       VC: vc15
       VCPKG: 0
-    - PHP_VER: 7.4.8
+    - PHP_VER: 7.4
       ARCH: x64
       TS: 0
       VC: vc15
       VCPKG: 1
-    - PHP_VER: 7.4.8
+    - PHP_VER: 7.4
       ARCH: x86
       TS: 1
       VC: vc15
