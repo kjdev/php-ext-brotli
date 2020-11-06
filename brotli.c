@@ -105,7 +105,7 @@ static zend_function_entry brotli_functions[] = {
     ZEND_FE_END
 };
 
-static const size_t brotli_buffer_size = 1 << 19;
+static const size_t PHP_BROTLI_BUFFER_SIZE = 1 << 19;
 
 static int php_brotli_encoder_create(BrotliEncoderState **encoder,
                                      long quality, int lgwin)
@@ -603,7 +603,7 @@ static ssize_t php_brotli_decompress_read(php_stream *stream,
     STREAM_DATA_FROM_STREAM();
 
     /* input */
-    uint8_t *input = (uint8_t *)emalloc(brotli_buffer_size);
+    uint8_t *input = (uint8_t *)emalloc(PHP_BROTLI_BUFFER_SIZE);
     if (self->result == BROTLI_DECODER_RESULT_NEEDS_MORE_INPUT) {
         if (php_stream_eof(self->stream)) {
             /* corrupt input */
@@ -617,7 +617,7 @@ static ssize_t php_brotli_decompress_read(php_stream *stream,
 #endif
         }
         self->available_in = php_stream_read(self->stream, input,
-                                             brotli_buffer_size );
+                                             PHP_BROTLI_BUFFER_SIZE );
         self->next_in = input;
     }
 
@@ -677,11 +677,11 @@ static int php_brotli_compress_close(php_stream *stream,
     const uint8_t *next_in = NULL;
     size_t available_in = 0;
 
-    uint8_t *output = (uint8_t *)emalloc(brotli_buffer_size);
+    uint8_t *output = (uint8_t *)emalloc(PHP_BROTLI_BUFFER_SIZE);
 
     while (!BrotliEncoderIsFinished(self->cctx)) {
         uint8_t *next_out = output;
-        size_t available_out = brotli_buffer_size;
+        size_t available_out = PHP_BROTLI_BUFFER_SIZE;
         if (BrotliEncoderCompressStream(self->cctx,
                                         BROTLI_OPERATION_FINISH,
                                         &available_in,
@@ -739,10 +739,10 @@ static ssize_t php_brotli_compress_write(php_stream *stream,
     size_t available_in = count;
     const uint8_t *next_in = (uint8_t *)buf;
 
-    uint8_t *output = (uint8_t *)emalloc(brotli_buffer_size);
+    uint8_t *output = (uint8_t *)emalloc(PHP_BROTLI_BUFFER_SIZE);
 
     while (available_in) {
-        size_t available_out = brotli_buffer_size;
+        size_t available_out = PHP_BROTLI_BUFFER_SIZE;
         uint8_t *next_out = output;
 
         if (BrotliEncoderCompressStream(self->cctx,
@@ -1268,7 +1268,7 @@ static ZEND_FUNCTION(brotli_uncompress)
 
     size_t available_in = in_size;
     const uint8_t *next_in = (const uint8_t *)in;
-    size_t buffer_size = brotli_buffer_size;
+    size_t buffer_size = PHP_BROTLI_BUFFER_SIZE;
     uint8_t *buffer = (uint8_t *)emalloc(buffer_size);
 
     BrotliDecoderResult result = BROTLI_DECODER_RESULT_NEEDS_MORE_OUTPUT;
@@ -1361,7 +1361,7 @@ static ZEND_FUNCTION(brotli_uncompress_add)
         RETURN_EMPTY_STRING();
     }
 
-    buffer_size = brotli_buffer_size;
+    buffer_size = PHP_BROTLI_BUFFER_SIZE;
     uint8_t *buffer = (uint8_t *)emalloc(buffer_size);
     if (!buffer) {
         php_error_docref(NULL TSRMLS_CC, E_WARNING,
@@ -1452,19 +1452,19 @@ static int APC_UNSERIALIZER_NAME(brotli)(APC_UNSERIALIZER_ARGS)
         return 0;
     }
 
-    var = (uint8_t*) emalloc(brotli_buffer_size);
+    var = (uint8_t*) emalloc(PHP_BROTLI_BUFFER_SIZE);
     if (var == NULL) {
         ZVAL_NULL(value);
         return 0;
     }
 
     while (res == BROTLI_DECODER_RESULT_NEEDS_MORE_OUTPUT) {
-        available_out = brotli_buffer_size;
+        available_out = PHP_BROTLI_BUFFER_SIZE;
         next_out = var;
         res = BrotliDecoderDecompressStream(state, &available_in, &next_in,
                                             &available_out, &next_out,
                                             0);
-        used_out = brotli_buffer_size - available_out;
+        used_out = PHP_BROTLI_BUFFER_SIZE - available_out;
         if (used_out != 0) {
             smart_str_appendl(&out, var, used_out);
         }
