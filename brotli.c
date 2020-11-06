@@ -11,6 +11,11 @@
 #else
 #include <ext/standard/php_smart_str.h>
 #endif
+#if PHP_MAJOR_VERSION >= 7 && defined(HAVE_APCU_SUPPORT)
+#include <ext/standard/php_var.h>
+#include <ext/apcu/apc_serializer.h>
+#include <zend_smart_str.h>
+#endif
 #include "php_brotli.h"
 
 #ifndef TSRMLS_C
@@ -67,6 +72,11 @@ ZEND_BEGIN_ARG_INFO_EX(arginfo_brotli_uncompress_add, 0, 0, 2)
     ZEND_ARG_INFO(0, data)
     ZEND_ARG_INFO(0, mode)
 ZEND_END_ARG_INFO()
+#endif
+
+#if PHP_MAJOR_VERSION >= 7 && defined(HAVE_APCU_SUPPORT)
+static int APC_SERIALIZER_NAME(brotli)(APC_SERIALIZER_ARGS);
+static int APC_UNSERIALIZER_NAME(brotli)(APC_UNSERIALIZER_ARGS);
 #endif
 
 static zend_function_entry brotli_functions[] = {
@@ -965,9 +975,15 @@ ZEND_MINIT_FUNCTION(brotli)
     REGISTER_INI_ENTRIES();
 #endif
 
-
     php_register_url_stream_wrapper(STREAM_NAME,
                                     &php_stream_brotli_wrapper TSRMLS_CC);
+
+#if PHP_MAJOR_VERSION >= 7 && defined(HAVE_APCU_SUPPORT)
+    apc_register_serializer("brotli",
+                            APC_SERIALIZER_NAME(brotli),
+                            APC_UNSERIALIZER_NAME(brotli),
+                            NULL);
+#endif
 
     return SUCCESS;
 }
@@ -1016,11 +1032,25 @@ ZEND_MINFO_FUNCTION(brotli)
              version >> 24, (version >> 12) & 0xfff, version & 0xfff);
     php_info_print_table_row(2, "Library Version", buffer);
 #endif
+#if PHP_MAJOR_VERSION >= 7 && defined(HAVE_APCU_SUPPORT)
+    php_info_print_table_row(2, "APCu serializer ABI", APC_SERIALIZER_ABI);
+#endif
     php_info_print_table_end();
 }
 
+#if PHP_MAJOR_VERSION >= 7 && defined(HAVE_APCU_SUPPORT)
+static const zend_module_dep brotli_module_deps[] = {
+    ZEND_MOD_OPTIONAL("apcu")
+    ZEND_MOD_END
+};
+#endif
+
 zend_module_entry brotli_module_entry = {
-#if ZEND_MODULE_API_NO >= 20010901
+#if PHP_MAJOR_VERSION >= 7 && defined(HAVE_APCU_SUPPORT)
+    STANDARD_MODULE_HEADER_EX,
+    NULL,
+    brotli_module_deps,
+#elif ZEND_MODULE_API_NO >= 20010901
     STANDARD_MODULE_HEADER,
 #endif
     "brotli",
@@ -1360,5 +1390,115 @@ static ZEND_FUNCTION(brotli_uncompress_add)
 
     efree(buffer);
     smart_string_free(&out);
+}
+#endif
+
+#if PHP_MAJOR_VERSION >= 7 && defined(HAVE_APCU_SUPPORT)
+static int APC_SERIALIZER_NAME(brotli)(APC_SERIALIZER_ARGS)
+{
+    int result;
+    int lgwin = BROTLI_DEFAULT_WINDOW, quality = BROTLI_DEFAULT_QUALITY;
+    php_serialize_data_t var_hash;
+    smart_str var = {0};
+    BrotliEncoderMode mode = BROTLI_MODE_GENERIC;
+
+    PHP_VAR_SERIALIZE_INIT(var_hash);
+    php_var_serialize(&var, (zval*) value, &var_hash);
+    PHP_VAR_SERIALIZE_DESTROY(var_hash);
+    if (var.s == NULL) {
+        return 0;
+    }
+
+    *buf_len = BrotliEncoderMaxCompressedSize(ZSTR_LEN(var.s));
+    *buf = (char*) emalloc(*buf_len);
+    if (*buf == NULL) {
+        *buf_len = 0;
+        return 0;
+    }
+
+    if (!BrotliEncoderCompress(quality, lgwin, mode,
+                               ZSTR_LEN(var.s),
+                               (const uint8_t*) ZSTR_VAL(var.s),
+                               buf_len, (uint8_t*) *buf)) {
+        efree(*buf);
+        *buf = NULL;
+        *buf_len = 0;
+        result = 0;
+    } else {
+        result = 1;
+    }
+
+    smart_str_free(&var);
+
+    return result;
+}
+
+static int APC_UNSERIALIZER_NAME(brotli)(APC_UNSERIALIZER_ARGS)
+{
+    const uint8_t *next_in = (const uint8_t*) buf;
+    const unsigned char* tmp;
+    int result;
+    php_unserialize_data_t var_hash;
+    size_t available_in = buf_len;
+    size_t available_out, used_out;
+    smart_str out = {NULL, 0};
+    uint8_t *var, *next_out;
+    BrotliDecoderResult res = BROTLI_DECODER_RESULT_NEEDS_MORE_OUTPUT;
+    BrotliDecoderState *state;
+
+    state = BrotliDecoderCreateInstance(NULL, NULL, NULL);
+    if (!state) {
+        ZVAL_NULL(value);
+        return 0;
+    }
+
+    var = (uint8_t*) emalloc(brotli_buffer_size);
+    if (var == NULL) {
+        ZVAL_NULL(value);
+        return 0;
+    }
+
+    while (res == BROTLI_DECODER_RESULT_NEEDS_MORE_OUTPUT) {
+        available_out = brotli_buffer_size;
+        next_out = var;
+        res = BrotliDecoderDecompressStream(state, &available_in, &next_in,
+                                            &available_out, &next_out,
+                                            0);
+        used_out = brotli_buffer_size - available_out;
+        if (used_out != 0) {
+            smart_str_appendl(&out, var, used_out);
+        }
+    }
+
+    BrotliDecoderDestroyInstance(state);
+    efree(var);
+
+    if (ZSTR_LEN(out.s) <= 0) {
+        smart_str_free(&out);
+        ZVAL_NULL(value);
+        return 0;
+    }
+
+    PHP_VAR_UNSERIALIZE_INIT(var_hash);
+    tmp = ZSTR_VAL(out.s);
+    result = php_var_unserialize(value, &tmp,
+                                 ZSTR_VAL(out.s) + ZSTR_LEN(out.s),
+                                 &var_hash);
+    PHP_VAR_UNSERIALIZE_DESTROY(var_hash);
+
+    if (!result) {
+        php_error_docref(NULL, E_NOTICE,
+                         "Error at offset %ld of %ld bytes",
+                         (zend_long) ((char*) tmp - ZSTR_VAL(out.s)),
+                         (zend_long) ZSTR_LEN(out.s));
+        ZVAL_NULL(value);
+        result = 0;
+    } else {
+        result = 1;
+    }
+
+    smart_str_free(&out);
+
+    return result;
 }
 #endif

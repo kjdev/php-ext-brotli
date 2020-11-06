@@ -17,10 +17,13 @@ jobs:
           - '7.3-zts-alpine'
           - '7.2-alpine'
           - '7.2-zts-alpine'
-        image: [php]
         library:
-          - false
-          - true
+          - ''
+          - 'system'
+        apcu:
+          - ''
+          - 'apcu'
+        image: [php]
         include:
           - php: '7.1-alpine'
             image: ghcr.io/kjdev/php
@@ -68,6 +71,12 @@ jobs:
           apt-get install -y libbrotli-dev
         if: ${{ matrix.library && contains(matrix.php, 'buster') }}
 
+      - name: Install PHP APCu extension
+        run: |
+          printf "\n" | pecl install apcu
+          echo 'extension=apcu.so' > $(php --ini | grep 'Scan for' | sed 's|.* \(/.*\)$|\1|')/apcu.ini
+        if: ${{ matrix.apcu }}
+
       - name: Build
         run: |
           phpize
@@ -81,6 +90,11 @@ jobs:
           make
         if: ${{ matrix.library }}
 
+      - name: Test Preparation APCu
+        run: |
+          cp $(php-config --extension-dir)/apcu.so modules/
+          sed -i 's/\$(PHP_TEST_SHARED_EXTENSIONS)/-d extension=apcu \$(PHP_TEST_SHARED_EXTENSIONS)/' Makefile
+        if: ${{ matrix.apcu }}
       - name: Test
         run: |
           make test TESTS="--show-diff" | tee test-output.txt
