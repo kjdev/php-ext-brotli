@@ -1,0 +1,98 @@
+name: Linux
+
+on: [push]
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        php:
+          - '8.0-alpine'
+          - '8.0-zts-buster' # NOTE: error occurs with alpine
+          - '7.4-alpine'
+          - '7.4-zts-alpine'
+          - '7.3-alpine'
+          - '7.3-zts-alpine'
+          - '7.2-alpine'
+          - '7.2-zts-alpine'
+        image: [php]
+        library:
+          - false
+          - true
+        include:
+          - php: '7.1-alpine'
+            image: ghcr.io/kjdev/php
+          - php: '7.0-alpine'
+            image: ghcr.io/kjdev/php
+          - php: '5.6-buster' # NOTE: error occurs with alpine
+            image: ghcr.io/kjdev/php
+          - php: '5.5-buster' # NOTE: error occurs with alpine
+            image: ghcr.io/kjdev/php
+          - php: '5.4-buster' # NOTE: error occurs with alpine
+            image: ghcr.io/kjdev/php
+          - php: '5.3-alpine'
+            image: ghcr.io/kjdev/php
+          - php: '5.2-alpine'
+            image: ghcr.io/kjdev/php
+
+    container:
+      image: ${{ matrix.image }}:${{ matrix.php }}
+
+    steps:
+      - name: Prepare required command (alpine)
+        run: |
+          apk upgrade --no-cache
+          apk add --no-cache autoconf gcc git libtool make musl-dev
+        if: ${{ contains(matrix.php, 'alpine') }}
+      - name: Prepare required command (buster)
+        run: |
+          apt-get update
+          apt-get install -y git
+        if: ${{ contains(matrix.php, 'buster') }}
+
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Checkout submodules
+        run: |
+          git submodule update --init --recursive
+        if: ${{ ! matrix.library }}
+      - name: Install dependency library (alpine)
+        run: |
+          apk add --no-cache brotli-dev
+        if: ${{ matrix.library && contains(matrix.php, 'alpine') }}
+      - name: Install dependency library (buster)
+        run: |
+          apt-get install -y libbrotli-dev
+        if: ${{ matrix.library && contains(matrix.php, 'buster') }}
+
+      - name: Build
+        run: |
+          phpize
+          ./configure
+          make
+        if: ${{ ! matrix.library }}
+      - name: Build with library
+        run: |
+          phpize
+          ./configure --with-libbrotli
+          make
+        if: ${{ matrix.library }}
+
+      - name: Test
+        run: |
+          make test TESTS="--show-diff" | tee test-output.txt
+          grep 'TEST SUMMARY$' test-output.txt > /dev/null && exit 1 || exit 0
+        env:
+          REPORT_EXIT_STATUS: 1
+          NO_INTERACTION: 1
+      - name: Failure Test
+        run: |
+          for FILE in $(find ./tests -name '*.diff'); do
+            echo echo $FILE
+            cat $FILE
+            echo
+          done
+        if: ${{ failure() }}
