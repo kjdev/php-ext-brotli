@@ -84,7 +84,7 @@ BROTLI\_COMPRESS\_LEVEL\_DEFAULT  | Default compress level value
 
 #### Description
 
-string **brotli\_compress** ( string _$data_ [, int _$quality_ = 11, int _$mode_ = -1 ] )
+string **brotli\_compress** ( string _$data_ [, int _$quality_ = 11, int _$mode_ = BROTLI\_GENERIC ] )
 
 This function compress a string.
 
@@ -136,9 +136,21 @@ The original uncompressed data or FALSE on error.
 
 #### Description
 
-string **brotli\_compress\_init** ( void )
+resource **brotli\_compress\_init** ( [ int _$quality_ = 11, int _$mode_ = BROTLI\_GENERIC ] )
 
 Initialize an incremental compress context. (PHP 7)
+
+#### Parameters
+
+* _quality_
+
+  The higher the quality, the slower the compression.
+  (Defaults to 11)
+
+* _mode_
+
+  The compression mode can be `BROTLI_GENERIC` (default),
+  `BROTLI_TEXT` (for UTF-8 format text input) or `BROTLI_FONT` (for WOFF 2.0).
 
 #### Return Values
 
@@ -179,7 +191,7 @@ Returns a chunk of compressed data, or FALSE on failure.
 
 #### Description
 
-string **brotli\_uncompress\_init** ( void )
+resource **brotli\_uncompress\_init** ( void )
 
 Initialize an incremental uncompress context. (PHP 7)
 
@@ -222,9 +234,9 @@ Returns a chunk of uncompressed data, or FALSE on failure.
 ```
 Namespace Brotli;
 
-function compress( $data [, $quality = 11, $mode = -1 ] )
+function compress( $data [, $quality = 11, $mode = BROTLI\_GENERIC ] )
 function uncompress( $data [, $length = 0 ] )
-function compress\_init()
+function compress\_init( [ $quality = 11, $mode = BROTLI\_GENERIC ] )
 function compress\_add( resource $context, string $data [, $mode = BROTLI\_PROCESS] )
 function uncompress\_init()
 function uncompress\_add( resource $context, string $data [, $mode = BROTLI\_PROCESS] )
