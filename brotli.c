@@ -56,6 +56,8 @@ ZEND_END_ARG_INFO()
 
 #if PHP_VERSION_ID >= 70000
 ZEND_BEGIN_ARG_INFO_EX(arginfo_brotli_compress_init, 0, 0, 0)
+    ZEND_ARG_INFO(0, quality)
+    ZEND_ARG_INFO(0, mode)
 ZEND_END_ARG_INFO()
 
 ZEND_BEGIN_ARG_INFO_EX(arginfo_brotli_compress_add, 0, 0, 2)
@@ -1147,15 +1149,19 @@ static ZEND_FUNCTION(brotli_compress)
 #if PHP_VERSION_ID >= 70000
 static ZEND_FUNCTION(brotli_compress_init)
 {
+    long quality = BROTLI_DEFAULT_QUALITY;
+    long mode =  BROTLI_MODE_GENERIC;
     php_brotli_state_context *ctx;
 
-    if (zend_parse_parameters_none() == FAILURE) {
+    if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC,
+                              "|ll", &quality, &mode) == FAILURE) {
         RETURN_FALSE;
     }
 
     ctx = php_brotli_state_init();
 
-    if (php_brotli_encoder_create(&ctx->encoder, 0, 0, 0) != SUCCESS) {
+    if (php_brotli_encoder_create(&ctx->encoder,
+                                  quality, 0, mode) != SUCCESS) {
         php_error_docref(NULL TSRMLS_CC, E_WARNING,
                          "Brotli incremental compress init failed\n");
         RETURN_FALSE;
