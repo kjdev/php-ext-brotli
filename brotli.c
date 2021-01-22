@@ -108,7 +108,7 @@ static zend_function_entry brotli_functions[] = {
 static const size_t PHP_BROTLI_BUFFER_SIZE = 1 << 19;
 
 static int php_brotli_encoder_create(BrotliEncoderState **encoder,
-                                     long quality, int lgwin)
+                                     long quality, int lgwin, long mode)
 {
 #if PHP_MAJOR_VERSION < 7
     TSRMLS_FETCH();
@@ -132,9 +132,15 @@ static int php_brotli_encoder_create(BrotliEncoderState **encoder,
     if (lgwin == 0) {
         lgwin = BROTLI_DEFAULT_WINDOW;
     }
+    if (mode != BROTLI_MODE_GENERIC &&
+        mode != BROTLI_MODE_TEXT &&
+        mode != BROTLI_MODE_FONT) {
+        mode = BROTLI_MODE_GENERIC;
+    }
 
     BrotliEncoderSetParameter(*encoder, BROTLI_PARAM_QUALITY, quality);
     BrotliEncoderSetParameter(*encoder, BROTLI_PARAM_LGWIN, lgwin);
+    BrotliEncoderSetParameter(*encoder, BROTLI_PARAM_MODE, mode);
 
     return SUCCESS;
 }
@@ -265,7 +271,8 @@ static int php_brotli_output_handler(void **handler_context,
     }
 
     if (output_context->op & PHP_OUTPUT_HANDLER_START) {
-        if (php_brotli_encoder_create(&ctx->state.encoder, 0, 0) != SUCCESS) {
+        if (php_brotli_encoder_create(&ctx->state.encoder,
+                                      0, 0, 0) != SUCCESS) {
             return FAILURE;
         }
     }
@@ -340,7 +347,8 @@ static int php_brotli_output_handler(void **handler_context,
             return SUCCESS;
         } else {
             // restart
-            if (php_brotli_encoder_create(&ctx->state.encoder, 0, 0) != SUCCESS) {
+            if (php_brotli_encoder_create(&ctx->state.encoder,
+                                          0, 0, 0) != SUCCESS) {
                 return FAILURE;
             }
         }
@@ -874,7 +882,7 @@ php_stream_brotli_opener(
     /* File */
     if (compress) {
         self->dctx = NULL;
-        if (php_brotli_encoder_create(&self->cctx, level, 0) != SUCCESS) {
+        if (php_brotli_encoder_create(&self->cctx, level, 0, 0) != SUCCESS) {
             php_error_docref(NULL TSRMLS_CC, E_WARNING,
                              "brotli: compression context failed");
             php_stream_close(self->stream);
@@ -1138,7 +1146,7 @@ static ZEND_FUNCTION(brotli_compress_init)
 
     ctx = php_brotli_state_init();
 
-    if (php_brotli_encoder_create(&ctx->encoder, 0, 0) != SUCCESS) {
+    if (php_brotli_encoder_create(&ctx->encoder, 0, 0, 0) != SUCCESS) {
         php_error_docref(NULL TSRMLS_CC, E_WARNING,
                          "Brotli incremental compress init failed\n");
         RETURN_FALSE;
