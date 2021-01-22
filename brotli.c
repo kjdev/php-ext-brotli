@@ -32,6 +32,8 @@
 int le_state;
 #endif
 
+# pragma GCC diagnostic ignored "-Wpointer-sign"
+
 ZEND_DECLARE_MODULE_GLOBALS(brotli);
 
 static ZEND_FUNCTION(brotli_compress);
