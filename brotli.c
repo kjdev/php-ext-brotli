@@ -120,6 +120,10 @@ static int php_brotli_encoder_create(BrotliEncoderState **encoder,
     }
 
     if (quality < BROTLI_MIN_QUALITY || quality > BROTLI_MAX_QUALITY) {
+        php_error_docref(NULL TSRMLS_CC, E_WARNING,
+                         "brotli: compression level (%d) "
+                         "must be within %d..%d",
+                         quality, BROTLI_MIN_QUALITY, BROTLI_MAX_QUALITY);
         quality = BROTLI_DEFAULT_QUALITY;
     }
     if (lgwin == 0) {
@@ -128,6 +132,10 @@ static int php_brotli_encoder_create(BrotliEncoderState **encoder,
     if (mode != BROTLI_MODE_GENERIC &&
         mode != BROTLI_MODE_TEXT &&
         mode != BROTLI_MODE_FONT) {
+        php_error_docref(NULL TSRMLS_CC, E_WARNING,
+                         "brotli: compression mode (%d) must be %d, %d, %d",
+                         mode, BROTLI_MODE_GENERIC, BROTLI_MODE_TEXT,
+                         BROTLI_MODE_FONT);
         mode = BROTLI_MODE_GENERIC;
     }
 
