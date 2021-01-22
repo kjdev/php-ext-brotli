@@ -119,13 +119,6 @@ static int php_brotli_encoder_create(BrotliEncoderState **encoder,
         return FAILURE;
     }
 
-    if (quality == 0) {
-#if PHP_VERSION_ID > 50400
-        quality = BROTLI_G(output_compression_level);
-#else
-        quality = BROTLI_DEFAULT_QUALITY;
-#endif
-    }
     if (quality < BROTLI_MIN_QUALITY || quality > BROTLI_MAX_QUALITY) {
         quality = BROTLI_DEFAULT_QUALITY;
     }
@@ -250,6 +243,7 @@ static void php_brotli_context_close(php_brotli_context *ctx)
 static int php_brotli_output_handler(void **handler_context,
                                      php_output_context *output_context)
 {
+    long quality = BROTLI_DEFAULT_QUALITY;
     php_brotli_context *ctx = *(php_brotli_context **)handler_context;
 #if PHP_MAJOR_VERSION < 7
     TSRMLS_FETCH();
@@ -270,9 +264,16 @@ static int php_brotli_output_handler(void **handler_context,
         return FAILURE;
     }
 
+#if PHP_VERSION_ID > 50400
+    quality = BROTLI_G(output_compression_level);
+#endif
+    if (quality < BROTLI_MIN_QUALITY || quality > BROTLI_MAX_QUALITY) {
+        quality = BROTLI_DEFAULT_QUALITY;
+    }
+
     if (output_context->op & PHP_OUTPUT_HANDLER_START) {
         if (php_brotli_encoder_create(&ctx->state.encoder,
-                                      0, 0, 0) != SUCCESS) {
+                                      quality, 0, 0) != SUCCESS) {
             return FAILURE;
         }
     }
@@ -348,7 +349,7 @@ static int php_brotli_output_handler(void **handler_context,
         } else {
             // restart
             if (php_brotli_encoder_create(&ctx->state.encoder,
-                                          0, 0, 0) != SUCCESS) {
+                                          quality, 0, 0) != SUCCESS) {
                 return FAILURE;
             }
         }
