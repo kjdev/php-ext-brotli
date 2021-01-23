@@ -32,6 +32,8 @@
 int le_state;
 #endif
 
+# pragma GCC diagnostic ignored "-Wpointer-sign"
+
 ZEND_DECLARE_MODULE_GLOBALS(brotli);
 
 static ZEND_FUNCTION(brotli_compress);
@@ -123,9 +125,9 @@ static int php_brotli_encoder_create(BrotliEncoderState **encoder,
 
     if (quality < BROTLI_MIN_QUALITY || quality > BROTLI_MAX_QUALITY) {
         php_error_docref(NULL TSRMLS_CC, E_WARNING,
-                         "brotli: compression level (%d) "
+                         "brotli: compression level (%ld) "
                          "must be within %d..%d",
-                         quality, BROTLI_MIN_QUALITY, BROTLI_MAX_QUALITY);
+                         (long)quality, BROTLI_MIN_QUALITY, BROTLI_MAX_QUALITY);
         quality = BROTLI_DEFAULT_QUALITY;
     }
     if (lgwin == 0) {
@@ -135,8 +137,8 @@ static int php_brotli_encoder_create(BrotliEncoderState **encoder,
         mode != BROTLI_MODE_TEXT &&
         mode != BROTLI_MODE_FONT) {
         php_error_docref(NULL TSRMLS_CC, E_WARNING,
-                         "brotli: compression mode (%d) must be %d, %d, %d",
-                         mode, BROTLI_MODE_GENERIC, BROTLI_MODE_TEXT,
+                         "brotli: compression mode (%ld) must be %d, %d, %d",
+                         (long)mode, BROTLI_MODE_GENERIC, BROTLI_MODE_TEXT,
                          BROTLI_MODE_FONT);
         mode = BROTLI_MODE_GENERIC;
     }
@@ -1362,7 +1364,7 @@ static ZEND_FUNCTION(brotli_uncompress_add)
 {
     zval *res;
     php_brotli_state_context *ctx;
-    size_t buffer_size, buffer_used;
+    size_t buffer_size;
     zend_long mode = BROTLI_OPERATION_PROCESS;
     char *in_buf;
     size_t in_size;
