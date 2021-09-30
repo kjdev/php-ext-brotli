@@ -284,7 +284,7 @@ $data = \Brotli\compress('test');
 
 ``` php
 file_put_contents("compress.brotli:///patch/to/data.br", $data);
-readfile("brotli.brotli:///patch/to/data.br");
+readfile("compress.brotli:///patch/to/data.br");
 ```
 
 ### Incrementally
