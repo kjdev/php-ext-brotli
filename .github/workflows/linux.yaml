@@ -9,6 +9,7 @@ jobs:
     strategy:
       matrix:
         php:
+          - '8.1-alpine'
           - '8.0-alpine'
           - '8.0-zts-buster' # NOTE: error occurs with alpine
           - '7.4-alpine'
