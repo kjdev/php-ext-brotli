@@ -26,6 +26,11 @@ jobs:
           - 'apcu'
         image: [php]
         include:
+          - php: '8.1-zts-alpine'
+            image: ghcr.io/kjdev/php
+          - php: '8.1-zts-alpine'
+            image: ghcr.io/kjdev/php
+            library: 'system'
           - php: '7.1-alpine'
             image: ghcr.io/kjdev/php
           - php: '7.0-alpine'
