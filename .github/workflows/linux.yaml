@@ -61,8 +61,10 @@ jobs:
           apt-get install -y git
         if: ${{ contains(matrix.php, 'buster') }}
 
+      - name: adding github workspace as safe directory
+        run: git config --global --add safe.directory $GITHUB_WORKSPACE
       - name: Checkout repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       - name: Checkout submodules
         run: |
