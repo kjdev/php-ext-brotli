@@ -10,14 +10,11 @@ jobs:
       matrix:
         php:
           - '8.1-alpine'
+          - '8.1-zts-alpine'
           - '8.0-alpine'
-          - '8.0-zts-buster' # NOTE: error occurs with alpine
+          - '8.0-zts-alpine'
           - '7.4-alpine'
           - '7.4-zts-alpine'
-          - '7.3-alpine'
-          - '7.3-zts-alpine'
-          - '7.2-alpine'
-          - '7.2-zts-alpine'
         library:
           - ''
           - 'system'
@@ -26,11 +23,10 @@ jobs:
           - 'apcu'
         image: [php]
         include:
-          - php: '8.1-zts-alpine'
+          - php: '7.3-alpine'
             image: ghcr.io/kjdev/php
-          - php: '8.1-zts-alpine'
+          - php: '7.2-alpine'
             image: ghcr.io/kjdev/php
-            library: 'system'
           - php: '7.1-alpine'
             image: ghcr.io/kjdev/php
           - php: '7.0-alpine'
