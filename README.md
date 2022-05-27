@@ -84,7 +84,7 @@ BROTLI\_COMPRESS\_LEVEL\_DEFAULT  | Default compress level value
 
 #### Description
 
-string **brotli\_compress** ( string _$data_ [, int _$quality_ = 11, int _$mode_ = BROTLI\_GENERIC ] )
+string **brotli\_compress** ( string _$data_ [, int _$quality_ = BROTLI\_COMPRESS\_LEVEL\_DEFAULT, int _$mode_ = BROTLI\_GENERIC ] )
 
 This function compress a string.
 
@@ -97,7 +97,7 @@ This function compress a string.
 * _quality_
 
   The higher the quality, the slower the compression.
-  (Defaults to 11)
+  (Defaults to `BROTLI\_COMPRESS\_LEVEL\_DEFAULT`)
 
 * _mode_
 
@@ -136,7 +136,7 @@ The original uncompressed data or FALSE on error.
 
 #### Description
 
-resource **brotli\_compress\_init** ( [ int _$quality_ = 11, int _$mode_ = BROTLI\_GENERIC ] )
+resource **brotli\_compress\_init** ( [ int _$quality_ = BROTLI\_COMPRESS\_LEVEL\_DEFAULT, int _$mode_ = BROTLI\_GENERIC ] )
 
 Initialize an incremental compress context. (PHP 7)
 
@@ -145,7 +145,7 @@ Initialize an incremental compress context. (PHP 7)
 * _quality_
 
   The higher the quality, the slower the compression.
-  (Defaults to 11)
+  (Defaults to `BROTLI\_COMPRESS\_LEVEL\_DEFAULT`)
 
 * _mode_
 
@@ -234,12 +234,12 @@ Returns a chunk of uncompressed data, or FALSE on failure.
 ```
 Namespace Brotli;
 
-function compress( $data [, $quality = 11, $mode = BROTLI\_GENERIC ] )
+function compress( $data [, $quality = \\BROTLI\_COMPRESS\_LEVEL\_DEFAULT, $mode = \\BROTLI\_GENERIC ] )
 function uncompress( $data [, $length = 0 ] )
-function compress\_init( [ $quality = 11, $mode = BROTLI\_GENERIC ] )
-function compress\_add( resource $context, string $data [, $mode = BROTLI\_PROCESS] )
+function compress\_init( [ $quality = \\BROTLI\_COMPRESS\_LEVEL\_DEFAULT, $mode = \\BROTLI\_GENERIC ] )
+function compress\_add( resource $context, string $data [, $mode = \\BROTLI\_PROCESS] )
 function uncompress\_init()
-function uncompress\_add( resource $context, string $data [, $mode = BROTLI\_PROCESS] )
+function uncompress\_add( resource $context, string $data [, $mode = \\BROTLI\_PROCESS] )
 ```
 
 alias functions..
