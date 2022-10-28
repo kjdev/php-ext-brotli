@@ -307,10 +307,7 @@ static int php_brotli_output_handler(void **handler_context,
                 ctx->output = (uint8_t *)erealloc(ctx->output,
                                                   ctx->available_out);
             }
-            if (!ctx->output) {
-                php_brotli_context_close(ctx);
-                return FAILURE;
-            }
+
             ctx->next_out = ctx->output;
 
             // append input
@@ -1113,11 +1110,6 @@ static ZEND_FUNCTION(brotli_compress)
 
     size_t out_size = BrotliEncoderMaxCompressedSize(in_size);
     char *out = (char *)emalloc(out_size);
-    if (!out) {
-        php_error_docref(NULL TSRMLS_CC, E_WARNING,
-                         "Brotli compress memory allocate failed\n");
-        RETURN_FALSE;
-    }
 
     if (mode != BROTLI_MODE_GENERIC &&
         mode != BROTLI_MODE_TEXT &&
@@ -1197,11 +1189,6 @@ static ZEND_FUNCTION(brotli_compress_add)
     buffer_size = BrotliEncoderMaxCompressedSize(in_size);
     buffer_size = (buffer_size < 64) ? 64 : buffer_size;
     uint8_t *buffer = (uint8_t *)emalloc(buffer_size);
-    if (!buffer) {
-        php_error_docref(NULL TSRMLS_CC, E_WARNING,
-                         "Brotli incremental compress buffer failed\n");
-        RETURN_FALSE;
-    }
 
     const uint8_t *next_in = in_buf;
     size_t available_in = in_size;
@@ -1388,11 +1375,6 @@ static ZEND_FUNCTION(brotli_uncompress_add)
 
     buffer_size = PHP_BROTLI_BUFFER_SIZE;
     uint8_t *buffer = (uint8_t *)emalloc(buffer_size);
-    if (!buffer) {
-        php_error_docref(NULL TSRMLS_CC, E_WARNING,
-                         "Brotli incremental uncompress buffer failed\n");
-        RETURN_FALSE;
-    }
 
     const uint8_t *next_in = (const uint8_t *)in_buf;
     size_t available_in = in_size;
@@ -1436,10 +1418,6 @@ static int APC_SERIALIZER_NAME(brotli)(APC_SERIALIZER_ARGS)
 
     *buf_len = BrotliEncoderMaxCompressedSize(ZSTR_LEN(var.s));
     *buf = (char*) emalloc(*buf_len);
-    if (*buf == NULL) {
-        *buf_len = 0;
-        return 0;
-    }
 
     if (!BrotliEncoderCompress(quality, lgwin, mode,
                                ZSTR_LEN(var.s),
@@ -1478,10 +1456,6 @@ static int APC_UNSERIALIZER_NAME(brotli)(APC_UNSERIALIZER_ARGS)
     }
 
     var = (uint8_t*) emalloc(PHP_BROTLI_BUFFER_SIZE);
-    if (var == NULL) {
-        ZVAL_NULL(value);
-        return 0;
-    }
 
     while (res == BROTLI_DECODER_RESULT_NEEDS_MORE_OUTPUT) {
         available_out = PHP_BROTLI_BUFFER_SIZE;
