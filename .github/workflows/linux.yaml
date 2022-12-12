@@ -9,6 +9,8 @@ jobs:
     strategy:
       matrix:
         php:
+          - '8.2-alpine'
+          - '8.2-zts-alpine'
           - '8.1-alpine'
           - '8.1-zts-alpine'
           - '8.0-alpine'
