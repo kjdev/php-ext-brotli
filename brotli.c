@@ -486,7 +486,11 @@ static PHP_INI_MH(OnUpdate_brotli_output_compression)
         int_value = 0;
     } else if (!strncasecmp(ZSTR_VAL(new_value), "on", sizeof("on"))) {
         int_value = 1;
+#if PHP_VERSION_ID >= 80200
+    } else if (zend_ini_parse_quantity_warn(new_value, entry->name)) {
+#else
     } else if (zend_atoi(ZSTR_VAL(new_value), ZSTR_LEN(new_value))) {
+#endif
         int_value = 1;
     } else {
         int_value = 0;
