@@ -76,8 +76,12 @@ if test "$PHP_BROTLI" != "no"; then
 
   PHP_NEW_EXTENSION(brotli, brotli.c $BROTLI_COMMON_SOURCES $BROTLI_ENC_SOURCES $BROTLI_DEC_SOURCES, $ext_shared,, -DZEND_ENABLE_STATIC_TSRMLS_CACHE=1)
 
-  if test -n "$BROTLI_COMMON_SOURCES" ; then
+  if test "$PHP_LIBBROTLI" = "no"; then
     PHP_ADD_INCLUDE([$ext_srcdir/brotli/c/include])
+
+    PHP_ADD_BUILD_DIR($ext_builddir/brotli/c/common)
+    PHP_ADD_BUILD_DIR($ext_builddir/brotli/c/dec)
+    PHP_ADD_BUILD_DIR($ext_builddir/brotli/c/enc)
   fi
 
   AC_MSG_CHECKING([for APCu includes])
