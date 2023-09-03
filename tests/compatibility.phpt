@@ -86,6 +86,14 @@ Testing decompression of file compressed_repeated.compressed
   read uncompressed .. OK
   compressed        .. OK
   uncompressed      .. OK
+Testing decompression of file cp1251-utf16le.compressed
+  read uncompressed .. OK
+  compressed        .. OK
+  uncompressed      .. OK
+Testing decompression of file cp852-utf8.compressed
+  read uncompressed .. OK
+  compressed        .. OK
+  uncompressed      .. OK
 Testing decompression of file empty.compressed
   read uncompressed .. OK
   compressed        .. OK
