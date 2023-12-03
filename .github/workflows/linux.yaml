@@ -14,8 +14,6 @@ jobs:
           - '8.2-zts-alpine'
           - '8.1-alpine'
           - '8.1-zts-alpine'
-          - '8.0-alpine'
-          - '8.0-zts-alpine'
         library:
           - ''
           - 'system'
@@ -24,6 +22,8 @@ jobs:
           - 'apcu'
         image: [php]
         include:
+          - php: '8.0-alpine'
+            image: ghcr.io/kjdev/php
           - php: '7.4-alpine'
             image: ghcr.io/kjdev/php
           - php: '7.3-alpine'
