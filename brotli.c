@@ -980,7 +980,12 @@ ZEND_MINIT_FUNCTION(brotli)
 #if PHP_VERSION_ID >= 70000
     REGISTER_LONG_CONSTANT("BROTLI_PROCESS", BROTLI_OPERATION_PROCESS,
                            CONST_CS | CONST_PERSISTENT);
+    REGISTER_LONG_CONSTANT("BROTLI_FLUSH", BROTLI_OPERATION_FLUSH,
+                           CONST_CS | CONST_PERSISTENT);
     REGISTER_LONG_CONSTANT("BROTLI_FINISH", BROTLI_OPERATION_FINISH,
+                           CONST_CS | CONST_PERSISTENT);
+    REGISTER_LONG_CONSTANT("BROTLI_EMIT_METADATA",
+                           BROTLI_OPERATION_EMIT_METADATA,
                            CONST_CS | CONST_PERSISTENT);
 
     le_state = zend_register_list_destructors_ex(php_brotli_state_rsrc_dtor,
