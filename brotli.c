@@ -1088,7 +1088,7 @@ static ZEND_FUNCTION(brotli_compress_add)
     zval *res;
     php_brotli_state_context *ctx;
     size_t buffer_size, buffer_used;
-    zend_long mode = BROTLI_OPERATION_PROCESS;
+    zend_long mode = BROTLI_OPERATION_FLUSH;
     char *in_buf;
     size_t in_size;
     smart_string out = {0};
@@ -1112,28 +1112,26 @@ static ZEND_FUNCTION(brotli_compress_add)
     const uint8_t *next_in = in_buf;
     size_t available_in = in_size;
 
-    if (in_size > 0) {
-        while (available_in) {
-            size_t available_out = buffer_size;
-            uint8_t *next_out = buffer;
-            if (BrotliEncoderCompressStream(ctx->encoder,
-                                            mode,
-                                            &available_in,
-                                            &next_in,
-                                            &available_out,
-                                            &next_out,
-                                            0)) {
-                buffer_used = (size_t)(next_out - buffer);
-                if (buffer_used) {
-                    smart_string_appendl(&out, buffer, buffer_used);
-                }
-            } else {
-                efree(buffer);
-                smart_string_free(&out);
-                php_error_docref(NULL TSRMLS_CC, E_WARNING,
-                                 "Brotli incremental compress failed\n");
-                RETURN_FALSE;
+    while (available_in || BrotliEncoderHasMoreOutput(ctx->encoder)) {
+        size_t available_out = buffer_size;
+        uint8_t *next_out = buffer;
+        if (BrotliEncoderCompressStream(ctx->encoder,
+                                        mode,
+                                        &available_in,
+                                        &next_in,
+                                        &available_out,
+                                        &next_out,
+                                        0)) {
+            buffer_used = (size_t)(next_out - buffer);
+            if (buffer_used) {
+                smart_string_appendl(&out, buffer, buffer_used);
             }
+        } else {
+            efree(buffer);
+            smart_string_free(&out);
+            php_error_docref(NULL TSRMLS_CC, E_WARNING,
+                             "Brotli incremental compress failed\n");
+            RETURN_FALSE;
         }
     }
 
