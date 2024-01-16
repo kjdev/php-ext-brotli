@@ -1268,7 +1268,7 @@ static ZEND_FUNCTION(brotli_uncompress_add)
     zval *res;
     php_brotli_state_context *ctx;
     size_t buffer_size;
-    zend_long mode = BROTLI_OPERATION_PROCESS;
+    zend_long mode = BROTLI_OPERATION_FLUSH;
     char *in_buf;
     size_t in_size;
     smart_string out = {0};
