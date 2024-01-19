@@ -6,24 +6,31 @@ if (!extension_loaded('brotli')) die('skip need ext/brotli');
 ?>
 --FILE--
 <?php
-$uncompressed = '';
-for ($i = 0; $i < (32768 * 2); $i++) {
-  $uncompressed .= chr(rand(48, 125));
-}
+$modeTypes = [
+  'BROTLI_PROCESS' => BROTLI_PROCESS,
+  'BROTLI_FLUSH' => BROTLI_FLUSH,
+];
 
-$compressed = brotli_compress($uncompressed);
-$compressedLen = strlen($compressed);
+foreach ($modeTypes as $modeTypeKey => $modeType) {
+  $uncompressed = '';
+  for ($i = 0; $i < (32768 * 2); $i++) {
+    $uncompressed .= chr(rand(48, 125));
+  }
 
-$out = '';
+  $compressed = brotli_compress($uncompressed);
+  $compressedLen = strlen($compressed);
 
-$resource = brotli_uncompress_init();
-for ($i = 0; $i < $compressedLen; $i++) {
-  $out .= brotli_uncompress_add($resource, $compressed[$i], BROTLI_PROCESS);
-}
-$out .= brotli_uncompress_add($resource, '', BROTLI_FINISH);
+  $out = '';
 
-if ($out !== $uncompressed) {
-  echo "Error: brotli_uncompress_add\n";
+  $resource = brotli_uncompress_init();
+  for ($i = 0; $i < $compressedLen; $i++) {
+    $out .= brotli_uncompress_add($resource, $compressed[$i], $modeType);
+  }
+  $out .= brotli_uncompress_add($resource, '', BROTLI_FINISH);
+
+  if ($out !== $uncompressed) {
+    echo "Error: brotli_uncompress_add | {$modeTypeKey}\n";
+  }
 }
 ?>
 ===DONE===
