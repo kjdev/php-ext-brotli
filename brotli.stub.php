@@ -14,7 +14,7 @@ namespace {
   /**
    * @param resource $context
    */
-  function brotli_compress_add($context, string $data, int $mode = BROTLI_PROCESS): string|false {}
+  function brotli_compress_add($context, string $data, int $mode = BROTLI_FLUSH): string|false {}
 
   /**
    * @return resource|false
@@ -24,7 +24,7 @@ namespace {
   /**
    * @param resource $context
    */
-  function brotli_uncompress_add($context, string $data, int $mode = BROTLI_PROCESS): string|false {}
+  function brotli_uncompress_add($context, string $data, int $mode = BROTLI_FLUSH): string|false {}
 }
 
 namespace Brotli {
@@ -41,7 +41,7 @@ namespace Brotli {
   /**
    * @param resource $context
    */
-  function compress_add($context, string $data, int $mode = \BROTLI_PROCESS): string|false {}
+  function compress_add($context, string $data, int $mode = \BROTLI_FLUSH): string|false {}
 
   /**
    * @return resource|false
@@ -51,7 +51,7 @@ namespace Brotli {
   /**
    * @param resource $context
    */
-  function uncompress_add($context, string $data, int $mode = \BROTLI_PROCESS): string|false {}
+  function uncompress_add($context, string $data, int $mode = \BROTLI_FLUSH): string|false {}
 }
 
 #if defined(PHP_WIN32) || defined(HAVE_DNS_SEARCH_FUNC)
