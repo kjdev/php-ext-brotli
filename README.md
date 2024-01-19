@@ -162,7 +162,7 @@ or FALSE on failure.
 
 #### Description
 
-string **brotli\_compress\_add** ( resource _$context_, string _$data_ [, _$mode_ = BROTLI\_PROCESS ] )
+string **brotli\_compress\_add** ( resource _$context_, string _$data_ [, _$mode_ = BROTLI\_FLUSH ] )
 
 Incrementally compress data. (PHP 7)
 
@@ -178,7 +178,7 @@ Incrementally compress data. (PHP 7)
 
 * _mode_
 
-  One of `BROTLI_PROCESS` (default), `BROTLI_FINISH`.
+  One of `BROTLI_FLUSH` (default) and `BROTLI_PROCESS`, `BROTLI_FINISH`.
 
   `BROTLI_FINISH` to terminate with the last chunk of data.
 
@@ -205,7 +205,7 @@ or FALSE on failure.
 
 #### Description
 
-string **brotli\_uncompress\_add** ( resource _$context_, string _$data_ [, _$mode_ = BROTLI\_PROCESS ] )
+string **brotli\_uncompress\_add** ( resource _$context_, string _$data_ [, _$mode_ = BROTLI\_FLUSH ] )
 
 Incrementally uncompress data. (PHP 7)
 
@@ -221,7 +221,7 @@ Incrementally uncompress data. (PHP 7)
 
 * _mode_
 
-  One of `BROTLI_PROCESS` (default), `BROTLI_FINISH`.
+  One of `BROTLI_FLUSH` (default) and `BROTLI_PROCESS`, `BROTLI_FINISH`.
 
   `BROTLI_FINISH` to terminate with the last chunk of data.
 
@@ -237,9 +237,9 @@ Namespace Brotli;
 function compress( $data [, $quality = \\BROTLI\_COMPRESS\_LEVEL\_DEFAULT, $mode = \\BROTLI\_GENERIC ] )
 function uncompress( $data [, $length = 0 ] )
 function compress\_init( [ $quality = \\BROTLI\_COMPRESS\_LEVEL\_DEFAULT, $mode = \\BROTLI\_GENERIC ] )
-function compress\_add( resource $context, string $data [, $mode = \\BROTLI\_PROCESS] )
+function compress\_add( resource $context, string $data [, $mode = \\BROTLI\_FLUSH] )
 function uncompress\_init()
-function uncompress\_add( resource $context, string $data [, $mode = \\BROTLI\_PROCESS] )
+function uncompress\_add( resource $context, string $data [, $mode = \\BROTLI\_FLUSH] )
 ```
 
 alias functions..
@@ -293,8 +293,8 @@ readfile("compress.brotli:///patch/to/data.br");
 // compression
 $resource = brotli_compress_init();
 $compressed = '';
-$compressed .= brotli_compress_add($resource, 'Hello, ', BROTLI_PROCESS);
-$compressed .= brotli_compress_add($resource, 'World!', BROTLI_PROCESS);
+$compressed .= brotli_compress_add($resource, 'Hello, ', BROTLI_FLUSH);
+$compressed .= brotli_compress_add($resource, 'World!', BROTLI_FLUSH);
 $compressed .= brotli_compress_add($resource, '', BROTLI_FINISH);
 
 echo brotli_uncompress($compressed), PHP_EOL; // Hello, World!
@@ -302,8 +302,8 @@ echo brotli_uncompress($compressed), PHP_EOL; // Hello, World!
 // uncompression
 $resource = brotli_uncompress_init();
 $uncompressed = '';
-$uncompressed .= brotli_uncompress_add($resource, substr($compressed, 0, 5), BROTLI_PROCESS);
-$uncompressed .= brotli_uncompress_add($resource, substr($compressed, 5), BROTLI_PROCESS);
+$uncompressed .= brotli_uncompress_add($resource, substr($compressed, 0, 5), BROTLI_FLUSH);
+$uncompressed .= brotli_uncompress_add($resource, substr($compressed, 5), BROTLI_FLUSH);
 $uncompressed .= brotli_uncompress_add($resource, '', BROTLI_FINISH);
 
 echo $uncompressed, PHP_EOL; // Hello, World!
