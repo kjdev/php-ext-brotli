@@ -35,16 +35,6 @@ jobs:
             image: ghcr.io/kjdev/php
           - php: '7.0-alpine'
             image: ghcr.io/kjdev/php
-          - php: '5.6-buster' # NOTE: error occurs with alpine
-            image: ghcr.io/kjdev/php
-          - php: '5.5-buster' # NOTE: error occurs with alpine
-            image: ghcr.io/kjdev/php
-          - php: '5.4-buster' # NOTE: error occurs with alpine
-            image: ghcr.io/kjdev/php
-          - php: '5.3-alpine'
-            image: ghcr.io/kjdev/php
-          - php: '5.2-alpine'
-            image: ghcr.io/kjdev/php
 
     container:
       image: ${{ matrix.image }}:${{ matrix.php }}
@@ -64,8 +54,7 @@ jobs:
       - name: adding github workspace as safe directory
         run: git config --global --add safe.directory $GITHUB_WORKSPACE
       - name: Checkout repository
-        uses: actions/checkout@v3
-
+        uses: actions/checkout@v4
       - name: Checkout submodules
         run: |
           git submodule update --init --recursive

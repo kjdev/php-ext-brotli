@@ -6,12 +6,8 @@
 #include <SAPI.h>
 #include <php_ini.h>
 #include <ext/standard/info.h>
-#if ZEND_MODULE_API_NO >= 20141001
 #include <ext/standard/php_smart_string.h>
-#else
-#include <ext/standard/php_smart_str.h>
-#endif
-#if PHP_MAJOR_VERSION >= 7 && defined(HAVE_APCU_SUPPORT)
+#if defined(HAVE_APCU_SUPPORT)
 #include <ext/standard/php_var.h>
 #include <ext/apcu/apc_serializer.h>
 #include <zend_smart_str.h>
@@ -28,9 +24,7 @@
 #define TSRMLS_DC
 #endif
 
-#if PHP_VERSION_ID >= 70000
 int le_state;
-#endif
 
 # pragma GCC diagnostic ignored "-Wpointer-sign"
 
@@ -38,12 +32,10 @@ ZEND_DECLARE_MODULE_GLOBALS(brotli);
 
 static ZEND_FUNCTION(brotli_compress);
 static ZEND_FUNCTION(brotli_uncompress);
-#if PHP_VERSION_ID >= 70000
 static ZEND_FUNCTION(brotli_compress_init);
 static ZEND_FUNCTION(brotli_compress_add);
 static ZEND_FUNCTION(brotli_uncompress_init);
 static ZEND_FUNCTION(brotli_uncompress_add);
-#endif
 
 ZEND_BEGIN_ARG_INFO_EX(arginfo_brotli_compress, 0, 0, 1)
     ZEND_ARG_INFO(0, data)
@@ -56,7 +48,6 @@ ZEND_BEGIN_ARG_INFO_EX(arginfo_brotli_uncompress, 0, 0, 1)
     ZEND_ARG_INFO(0, max)
 ZEND_END_ARG_INFO()
 
-#if PHP_VERSION_ID >= 70000
 ZEND_BEGIN_ARG_INFO_EX(arginfo_brotli_compress_init, 0, 0, 0)
     ZEND_ARG_INFO(0, quality)
     ZEND_ARG_INFO(0, mode)
@@ -76,9 +67,8 @@ ZEND_BEGIN_ARG_INFO_EX(arginfo_brotli_uncompress_add, 0, 0, 2)
     ZEND_ARG_INFO(0, data)
     ZEND_ARG_INFO(0, mode)
 ZEND_END_ARG_INFO()
-#endif
 
-#if PHP_MAJOR_VERSION >= 7 && defined(HAVE_APCU_SUPPORT)
+#if defined(HAVE_APCU_SUPPORT)
 static int APC_SERIALIZER_NAME(brotli)(APC_SERIALIZER_ARGS);
 static int APC_UNSERIALIZER_NAME(brotli)(APC_UNSERIALIZER_ARGS);
 #endif
@@ -86,13 +76,10 @@ static int APC_UNSERIALIZER_NAME(brotli)(APC_UNSERIALIZER_ARGS);
 static zend_function_entry brotli_functions[] = {
     ZEND_FE(brotli_compress, arginfo_brotli_compress)
     ZEND_FE(brotli_uncompress, arginfo_brotli_uncompress)
-#if PHP_VERSION_ID > 50300 // PHP 5.3+
     ZEND_NS_FALIAS(BROTLI_NS, compress,
                    brotli_compress, arginfo_brotli_compress)
     ZEND_NS_FALIAS(BROTLI_NS, uncompress,
                    brotli_uncompress, arginfo_brotli_uncompress)
-#endif
-#if PHP_VERSION_ID >= 70000
     ZEND_FE(brotli_compress_init, arginfo_brotli_compress_init)
     ZEND_FE(brotli_compress_add, arginfo_brotli_compress_add)
     ZEND_FE(brotli_uncompress_init, arginfo_brotli_uncompress_init)
@@ -105,7 +92,6 @@ static zend_function_entry brotli_functions[] = {
                    brotli_uncompress_init, arginfo_brotli_uncompress_init)
     ZEND_NS_FALIAS(BROTLI_NS, uncompress_add,
                    brotli_uncompress_add, arginfo_brotli_uncompress_add)
-#endif
     ZEND_FE_END
 };
 
@@ -114,10 +100,6 @@ static const size_t PHP_BROTLI_BUFFER_SIZE = 1 << 19;
 static int php_brotli_encoder_create(BrotliEncoderState **encoder,
                                      long quality, int lgwin, long mode)
 {
-#if PHP_MAJOR_VERSION < 7
-    TSRMLS_FETCH();
-#endif
-
     *encoder = BrotliEncoderCreateInstance(NULL, NULL, NULL);
     if (!*encoder) {
         return FAILURE;
@@ -160,7 +142,6 @@ static int php_brotli_decoder_create(BrotliDecoderState **decoder)
     return SUCCESS;
 }
 
-#if PHP_VERSION_ID >= 70000
 static php_brotli_state_context* php_brotli_state_init(void)
 {
     php_brotli_state_context *ctx
@@ -189,26 +170,17 @@ static void php_brotli_state_rsrc_dtor(zend_resource *res)
     php_brotli_state_context *ctx = zend_fetch_resource(res, NULL, le_state);
     php_brotli_state_destroy(ctx);
 }
-#endif
-
-#if PHP_VERSION_ID > 50400 // Output Handler: 5.4+
 
 #define PHP_BROTLI_OUTPUT_HANDLER "ob_brotli_handler"
 
 static int php_brotli_output_encoding(void)
 {
-#if PHP_MAJOR_VERSION >= 7
 #if defined(COMPILE_DL_BROTLI) && defined(ZTS)
     ZEND_TSRMLS_CACHE_UPDATE();
 #endif
     zval *enc;
-#else
-    zval **enc;
-    TSRMLS_FETCH();
-#endif
 
     if (!BROTLI_G(compression_coding)) {
-#if PHP_MAJOR_VERSION >= 7
         if ((Z_TYPE(PG(http_globals)[TRACK_VARS_SERVER]) == IS_ARRAY
              || zend_is_auto_global_str(ZEND_STRL("_SERVER")))
             && (enc = zend_hash_str_find(
@@ -220,16 +192,6 @@ static int php_brotli_output_encoding(void)
                 BROTLI_G(compression_coding) = 1;
             }
         }
-#else
-        if ((PG(http_globals)[TRACK_VARS_SERVER]
-             || zend_is_auto_global(ZEND_STRL("_SERVER") TSRMLS_CC)) &&
-            SUCCESS == zend_hash_find(Z_ARRVAL_P(PG(http_globals)[TRACK_VARS_SERVER]), "HTTP_ACCEPT_ENCODING", sizeof("HTTP_ACCEPT_ENCODING"), (void *) &enc)) {
-            convert_to_string(*enc);
-            if (strstr(Z_STRVAL_PP(enc), "br")) {
-                BROTLI_G(compression_coding) = 1;
-            }
-        }
-#endif
     }
 
     return BROTLI_G(compression_coding);
@@ -257,9 +219,6 @@ static int php_brotli_output_handler(void **handler_context,
 {
     long quality = BROTLI_DEFAULT_QUALITY;
     php_brotli_context *ctx = *(php_brotli_context **)handler_context;
-#if PHP_MAJOR_VERSION < 7
-    TSRMLS_FETCH();
-#endif
 
     if (!php_brotli_output_encoding()) {
         if ((output_context->op & PHP_OUTPUT_HANDLER_START)
@@ -276,9 +235,7 @@ static int php_brotli_output_handler(void **handler_context,
         return FAILURE;
     }
 
-#if PHP_VERSION_ID > 50400
     quality = BROTLI_G(output_compression_level);
-#endif
     if (quality < BROTLI_MIN_QUALITY || quality > BROTLI_MAX_QUALITY) {
         quality = BROTLI_DEFAULT_QUALITY;
     }
@@ -401,9 +358,6 @@ php_brotli_output_handler_init(const char *handler_name,
                                size_t chunk_size, int flags)
 {
     php_output_handler *handler = NULL;
-#if PHP_MAJOR_VERSION < 7
-    TSRMLS_FETCH();
-#endif
 
     handler = php_output_handler_create_internal(handler_name, handler_name_len,
                                                  php_brotli_output_handler,
@@ -430,10 +384,6 @@ php_brotli_output_handler_init(const char *handler_name,
 
 static void php_brotli_cleanup_ob_handler_mess(void)
 {
-#if PHP_MAJOR_VERSION < 7
-    TSRMLS_FETCH();
-#endif
-
     if (BROTLI_G(ob_handler)) {
         php_brotli_output_handler_context_dtor(
             (void *) BROTLI_G(ob_handler) TSRMLS_CC
@@ -445,10 +395,6 @@ static void php_brotli_cleanup_ob_handler_mess(void)
 static void php_brotli_output_compression_start(void)
 {
     php_output_handler *h;
-#if PHP_MAJOR_VERSION < 7
-    TSRMLS_FETCH();
-#endif
-
     switch (BROTLI_G(output_compression)) {
         case 0:
             break;
@@ -481,7 +427,6 @@ static PHP_INI_MH(OnUpdate_brotli_output_compression)
         return FAILURE;
     }
 
-#if PHP_MAJOR_VERSION >= 7
     if (!strncasecmp(ZSTR_VAL(new_value), "off", sizeof("off"))) {
         int_value = 0;
     } else if (!strncasecmp(ZSTR_VAL(new_value), "on", sizeof("on"))) {
@@ -495,17 +440,6 @@ static PHP_INI_MH(OnUpdate_brotli_output_compression)
     } else {
         int_value = 0;
     }
-#else
-    if (!strncasecmp(new_value, "off", sizeof("off"))) {
-        int_value = 0;
-    } else if (!strncasecmp(new_value, "on", sizeof("on"))) {
-        int_value = 1;
-    } else if (zend_atoi(new_value, new_value_length)) {
-        int_value = 1;
-    } else {
-        int_value = 0;
-    }
-#endif
 
     if (stage == PHP_INI_STAGE_RUNTIME) {
         status = php_output_get_status(TSRMLS_C);
@@ -560,7 +494,6 @@ static void php_brotli_init_globals(zend_brotli_globals *brotli_globals)
     brotli_globals->compression_coding = 0;
     brotli_globals->ob_handler = NULL;
 }
-#endif
 
 typedef struct _php_brotli_stream_data {
     BrotliEncoderState *cctx;
@@ -1000,7 +933,7 @@ ZEND_MINIT_FUNCTION(brotli)
     php_register_url_stream_wrapper(STREAM_NAME,
                                     &php_stream_brotli_wrapper TSRMLS_CC);
 
-#if PHP_MAJOR_VERSION >= 7 && defined(HAVE_APCU_SUPPORT)
+#if defined(HAVE_APCU_SUPPORT)
     apc_register_serializer("brotli",
                             APC_SERIALIZER_NAME(brotli),
                             APC_UNSERIALIZER_NAME(brotli),
@@ -1054,13 +987,13 @@ ZEND_MINFO_FUNCTION(brotli)
              version >> 24, (version >> 12) & 0xfff, version & 0xfff);
     php_info_print_table_row(2, "Library Version", buffer);
 #endif
-#if PHP_MAJOR_VERSION >= 7 && defined(HAVE_APCU_SUPPORT)
+#if defined(HAVE_APCU_SUPPORT)
     php_info_print_table_row(2, "APCu serializer ABI", APC_SERIALIZER_ABI);
 #endif
     php_info_print_table_end();
 }
 
-#if PHP_MAJOR_VERSION >= 7 && defined(HAVE_APCU_SUPPORT)
+#if defined(HAVE_APCU_SUPPORT)
 static const zend_module_dep brotli_module_deps[] = {
     ZEND_MOD_OPTIONAL("apcu")
     ZEND_MOD_END
@@ -1068,7 +1001,7 @@ static const zend_module_dep brotli_module_deps[] = {
 #endif
 
 zend_module_entry brotli_module_entry = {
-#if PHP_MAJOR_VERSION >= 7 && defined(HAVE_APCU_SUPPORT)
+#if defined(HAVE_APCU_SUPPORT)
     STANDARD_MODULE_HEADER_EX,
     NULL,
     brotli_module_deps,
@@ -1404,7 +1337,7 @@ static ZEND_FUNCTION(brotli_uncompress_add)
 }
 #endif
 
-#if PHP_MAJOR_VERSION >= 7 && defined(HAVE_APCU_SUPPORT)
+#if defined(HAVE_APCU_SUPPORT)
 static int APC_SERIALIZER_NAME(brotli)(APC_SERIALIZER_ARGS)
 {
     int result;
