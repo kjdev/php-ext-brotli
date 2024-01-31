@@ -6,12 +6,8 @@
 #include <SAPI.h>
 #include <php_ini.h>
 #include <ext/standard/info.h>
-#if ZEND_MODULE_API_NO >= 20141001
 #include <ext/standard/php_smart_string.h>
-#else
-#include <ext/standard/php_smart_str.h>
-#endif
-#if PHP_MAJOR_VERSION >= 7 && defined(HAVE_APCU_SUPPORT)
+#if defined(HAVE_APCU_SUPPORT)
 #include <ext/standard/php_var.h>
 #include <ext/apcu/apc_serializer.h>
 #include <zend_smart_str.h>
@@ -28,9 +24,7 @@
 #define TSRMLS_DC
 #endif
 
-#if PHP_VERSION_ID >= 70000
 int le_state;
-#endif
 
 # pragma GCC diagnostic ignored "-Wpointer-sign"
 
@@ -38,12 +32,10 @@ ZEND_DECLARE_MODULE_GLOBALS(brotli);
 
 static ZEND_FUNCTION(brotli_compress);
 static ZEND_FUNCTION(brotli_uncompress);
-#if PHP_VERSION_ID >= 70000
 static ZEND_FUNCTION(brotli_compress_init);
 static ZEND_FUNCTION(brotli_compress_add);
 static ZEND_FUNCTION(brotli_uncompress_init);
 static ZEND_FUNCTION(brotli_uncompress_add);
-#endif
 
 ZEND_BEGIN_ARG_INFO_EX(arginfo_brotli_compress, 0, 0, 1)
     ZEND_ARG_INFO(0, data)
@@ -56,7 +48,6 @@ ZEND_BEGIN_ARG_INFO_EX(arginfo_brotli_uncompress, 0, 0, 1)
     ZEND_ARG_INFO(0, max)
 ZEND_END_ARG_INFO()
 
-#if PHP_VERSION_ID >= 70000
 ZEND_BEGIN_ARG_INFO_EX(arginfo_brotli_compress_init, 0, 0, 0)
     ZEND_ARG_INFO(0, quality)
     ZEND_ARG_INFO(0, mode)
@@ -76,9 +67,8 @@ ZEND_BEGIN_ARG_INFO_EX(arginfo_brotli_uncompress_add, 0, 0, 2)
     ZEND_ARG_INFO(0, data)
     ZEND_ARG_INFO(0, mode)
 ZEND_END_ARG_INFO()
-#endif
 
-#if PHP_MAJOR_VERSION >= 7 && defined(HAVE_APCU_SUPPORT)
+#if defined(HAVE_APCU_SUPPORT)
 static int APC_SERIALIZER_NAME(brotli)(APC_SERIALIZER_ARGS);
 static int APC_UNSERIALIZER_NAME(brotli)(APC_UNSERIALIZER_ARGS);
 #endif
@@ -86,13 +76,10 @@ static int APC_UNSERIALIZER_NAME(brotli)(APC_UNSERIALIZER_ARGS);
 static zend_function_entry brotli_functions[] = {
     ZEND_FE(brotli_compress, arginfo_brotli_compress)
     ZEND_FE(brotli_uncompress, arginfo_brotli_uncompress)
-#if PHP_VERSION_ID > 50300 // PHP 5.3+
     ZEND_NS_FALIAS(BROTLI_NS, compress,
                    brotli_compress, arginfo_brotli_compress)
     ZEND_NS_FALIAS(BROTLI_NS, uncompress,
                    brotli_uncompress, arginfo_brotli_uncompress)
-#endif
-#if PHP_VERSION_ID >= 70000
     ZEND_FE(brotli_compress_init, arginfo_brotli_compress_init)
     ZEND_FE(brotli_compress_add, arginfo_brotli_compress_add)
     ZEND_FE(brotli_uncompress_init, arginfo_brotli_uncompress_init)
@@ -105,7 +92,6 @@ static zend_function_entry brotli_functions[] = {
                    brotli_uncompress_init, arginfo_brotli_uncompress_init)
     ZEND_NS_FALIAS(BROTLI_NS, uncompress_add,
                    brotli_uncompress_add, arginfo_brotli_uncompress_add)
-#endif
     ZEND_FE_END
 };
 
