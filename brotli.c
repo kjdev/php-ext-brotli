@@ -100,10 +100,6 @@ static const size_t PHP_BROTLI_BUFFER_SIZE = 1 << 19;
 static int php_brotli_encoder_create(BrotliEncoderState **encoder,
                                      long quality, int lgwin, long mode)
 {
-#if PHP_MAJOR_VERSION < 7
-    TSRMLS_FETCH();
-#endif
-
     *encoder = BrotliEncoderCreateInstance(NULL, NULL, NULL);
     if (!*encoder) {
         return FAILURE;
@@ -243,9 +239,6 @@ static int php_brotli_output_handler(void **handler_context,
 {
     long quality = BROTLI_DEFAULT_QUALITY;
     php_brotli_context *ctx = *(php_brotli_context **)handler_context;
-#if PHP_MAJOR_VERSION < 7
-    TSRMLS_FETCH();
-#endif
 
     if (!php_brotli_output_encoding()) {
         if ((output_context->op & PHP_OUTPUT_HANDLER_START)
@@ -387,9 +380,6 @@ php_brotli_output_handler_init(const char *handler_name,
                                size_t chunk_size, int flags)
 {
     php_output_handler *handler = NULL;
-#if PHP_MAJOR_VERSION < 7
-    TSRMLS_FETCH();
-#endif
 
     handler = php_output_handler_create_internal(handler_name, handler_name_len,
                                                  php_brotli_output_handler,
@@ -416,10 +406,6 @@ php_brotli_output_handler_init(const char *handler_name,
 
 static void php_brotli_cleanup_ob_handler_mess(void)
 {
-#if PHP_MAJOR_VERSION < 7
-    TSRMLS_FETCH();
-#endif
-
     if (BROTLI_G(ob_handler)) {
         php_brotli_output_handler_context_dtor(
             (void *) BROTLI_G(ob_handler) TSRMLS_CC
@@ -431,10 +417,6 @@ static void php_brotli_cleanup_ob_handler_mess(void)
 static void php_brotli_output_compression_start(void)
 {
     php_output_handler *h;
-#if PHP_MAJOR_VERSION < 7
-    TSRMLS_FETCH();
-#endif
-
     switch (BROTLI_G(output_compression)) {
         case 0:
             break;
