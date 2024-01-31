@@ -7,7 +7,6 @@ HTTP_ACCEPT_ENCODING=br
 --SKIPIF--
 <?php
 if (!extension_loaded('brotli')) die('skip need ext/brotli');
-if (version_compare(PHP_VERSION, '5.4.0', '<')) die('skip need version');
 ?>
 --FILE--
 <?php

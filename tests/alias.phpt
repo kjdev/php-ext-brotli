@@ -1,7 +1,5 @@
 --TEST--
 alias (namespace) functionality
---SKIPIF--
-<?php if (PHP_VERSION_ID < 50300) die("Skipped: PHP 5.3+ required."); ?>
 --FILE--
 <?php
 include(dirname(__FILE__) . '/data.inc');

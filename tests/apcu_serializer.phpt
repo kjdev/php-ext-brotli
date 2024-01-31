@@ -5,10 +5,6 @@ apc.enable_cli=1
 apc.serializer=brotli
 --SKIPIF--
 <?php
-if (PHP_VERSION_ID < 70000) {
-  echo 'skip need version: 7.0+';
-  die;
-}
 if (!extension_loaded('apcu')) {
   echo 'skip need apcu';
   die;

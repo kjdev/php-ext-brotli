@@ -3,7 +3,6 @@ Test incremental brotli_compress_add() functionality
 --SKIPIF--
 <?php
 if (!extension_loaded('brotli')) die('skip need ext/brotli');
-if (PHP_VERSION_ID < 70000) die('skip need version: 7.0+');
 ?>
 --FILE--
 <?php

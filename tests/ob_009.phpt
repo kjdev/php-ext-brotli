@@ -3,7 +3,6 @@ checks brotli compression output size is always the same
 --SKIPIF--
 <?php
 if (!extension_loaded('brotli')) die('skip');
-if (version_compare(PHP_VERSION, '5.4.0', '<')) die('skip need version');
 ?>
 --CGI--
 --FILE--
