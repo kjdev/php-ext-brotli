@@ -753,13 +753,8 @@ static php_stream_ops php_stream_brotli_write_ops = {
 static php_stream *
 php_stream_brotli_opener(
     php_stream_wrapper *wrapper,
-#if PHP_VERSION_ID < 50600
-    char *path,
-    char *mode,
-#else
     const char *path,
     const char *mode,
-#endif
     int options,
 #if PHP_MAJOR_VERSION < 7
     char **opened_path,
@@ -877,10 +872,8 @@ static php_stream_wrapper_ops brotli_stream_wops = {
     NULL,    /* unlink */
     NULL,    /* rename */
     NULL,    /* mkdir */
-    NULL     /* rmdir */
-#if PHP_VERSION_ID >= 50400
-    , NULL
-#endif
+    NULL,    /* rmdir */
+    NULL
 };
 
 php_stream_wrapper php_stream_brotli_wrapper = {
@@ -891,9 +884,7 @@ php_stream_wrapper php_stream_brotli_wrapper = {
 
 ZEND_MINIT_FUNCTION(brotli)
 {
-#if PHP_VERSION_ID > 50400
     ZEND_INIT_MODULE_GLOBALS(brotli, php_brotli_init_globals, NULL);
-#endif
 
     REGISTER_LONG_CONSTANT("BROTLI_GENERIC", BROTLI_MODE_GENERIC,
                            CONST_CS | CONST_PERSISTENT);
@@ -910,7 +901,6 @@ ZEND_MINIT_FUNCTION(brotli)
                            BROTLI_DEFAULT_QUALITY,
                            CONST_CS | CONST_PERSISTENT);
 
-#if PHP_VERSION_ID >= 70000
     REGISTER_LONG_CONSTANT("BROTLI_PROCESS", BROTLI_OPERATION_PROCESS,
                            CONST_CS | CONST_PERSISTENT);
     REGISTER_LONG_CONSTANT("BROTLI_FINISH", BROTLI_OPERATION_FINISH,
@@ -919,16 +909,13 @@ ZEND_MINIT_FUNCTION(brotli)
     le_state = zend_register_list_destructors_ex(php_brotli_state_rsrc_dtor,
                                                  NULL, "brotli.state",
                                                  module_number);
-#endif
 
-#if PHP_VERSION_ID > 50400
     php_output_handler_alias_register(ZEND_STRL(PHP_BROTLI_OUTPUT_HANDLER),
                                       php_brotli_output_handler_init TSRMLS_CC);
     php_output_handler_conflict_register(ZEND_STRL(PHP_BROTLI_OUTPUT_HANDLER),
                                          php_brotli_output_conflict TSRMLS_CC);
 
     REGISTER_INI_ENTRIES();
-#endif
 
     php_register_url_stream_wrapper(STREAM_NAME,
                                     &php_stream_brotli_wrapper TSRMLS_CC);
@@ -945,31 +932,25 @@ ZEND_MINIT_FUNCTION(brotli)
 
 ZEND_MSHUTDOWN_FUNCTION(brotli)
 {
-#if PHP_VERSION_ID > 50400
     UNREGISTER_INI_ENTRIES();
-#endif
     return SUCCESS;
 }
 
 ZEND_RINIT_FUNCTION(brotli)
 {
-#if PHP_VERSION_ID > 50400
     BROTLI_G(compression_coding) = 0;
     if (!BROTLI_G(handler_registered)) {
         php_brotli_output_compression_start();
     }
-#endif
     return SUCCESS;
 }
 
 ZEND_RSHUTDOWN_FUNCTION(brotli)
 {
-#if PHP_VERSION_ID > 50400
     if (BROTLI_G(handler_registered)) {
         php_brotli_cleanup_ob_handler_mess();
     }
     BROTLI_G(handler_registered) = 0;
-#endif
     return SUCCESS;
 }
 
@@ -1077,7 +1058,6 @@ static ZEND_FUNCTION(brotli_compress)
     efree(out);
 }
 
-#if PHP_VERSION_ID >= 70000
 static ZEND_FUNCTION(brotli_compress_init)
 {
     long quality = BROTLI_DEFAULT_QUALITY;
@@ -1185,7 +1165,6 @@ static ZEND_FUNCTION(brotli_compress_add)
     efree(buffer);
     smart_string_free(&out);
 }
-#endif
 
 static ZEND_FUNCTION(brotli_uncompress)
 {
