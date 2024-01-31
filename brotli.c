@@ -968,7 +968,7 @@ ZEND_MINIT_FUNCTION(brotli)
     php_register_url_stream_wrapper(STREAM_NAME,
                                     &php_stream_brotli_wrapper TSRMLS_CC);
 
-#if PHP_MAJOR_VERSION >= 7 && defined(HAVE_APCU_SUPPORT)
+#if defined(HAVE_APCU_SUPPORT)
     apc_register_serializer("brotli",
                             APC_SERIALIZER_NAME(brotli),
                             APC_UNSERIALIZER_NAME(brotli),
@@ -1022,13 +1022,13 @@ ZEND_MINFO_FUNCTION(brotli)
              version >> 24, (version >> 12) & 0xfff, version & 0xfff);
     php_info_print_table_row(2, "Library Version", buffer);
 #endif
-#if PHP_MAJOR_VERSION >= 7 && defined(HAVE_APCU_SUPPORT)
+#if defined(HAVE_APCU_SUPPORT)
     php_info_print_table_row(2, "APCu serializer ABI", APC_SERIALIZER_ABI);
 #endif
     php_info_print_table_end();
 }
 
-#if PHP_MAJOR_VERSION >= 7 && defined(HAVE_APCU_SUPPORT)
+#if defined(HAVE_APCU_SUPPORT)
 static const zend_module_dep brotli_module_deps[] = {
     ZEND_MOD_OPTIONAL("apcu")
     ZEND_MOD_END
@@ -1036,7 +1036,7 @@ static const zend_module_dep brotli_module_deps[] = {
 #endif
 
 zend_module_entry brotli_module_entry = {
-#if PHP_MAJOR_VERSION >= 7 && defined(HAVE_APCU_SUPPORT)
+#if defined(HAVE_APCU_SUPPORT)
     STANDARD_MODULE_HEADER_EX,
     NULL,
     brotli_module_deps,
@@ -1372,7 +1372,7 @@ static ZEND_FUNCTION(brotli_uncompress_add)
 }
 #endif
 
-#if PHP_MAJOR_VERSION >= 7 && defined(HAVE_APCU_SUPPORT)
+#if defined(HAVE_APCU_SUPPORT)
 static int APC_SERIALIZER_NAME(brotli)(APC_SERIALIZER_ARGS)
 {
     int result;
