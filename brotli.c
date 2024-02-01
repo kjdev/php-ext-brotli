@@ -742,11 +742,7 @@ php_stream_brotli_opener(
     const char *path,
     const char *mode,
     int options,
-#if PHP_MAJOR_VERSION < 7
-    char **opened_path,
-#else
     zend_string **opened_path,
-#endif
     php_stream_context *context
     STREAMS_DC)
 {
@@ -775,22 +771,12 @@ php_stream_brotli_opener(
     }
 
     if (context) {
-#if PHP_MAJOR_VERSION >= 7
         zval *tmpzval;
 
         if (NULL != (tmpzval = php_stream_context_get_option(
                          context, "brotli", "level"))) {
             level = zval_get_long(tmpzval);
         }
-#else
-        zval **tmpzval;
-
-        if (php_stream_context_get_option(
-                context, "brotli", "level", &tmpzval) == SUCCESS) {
-            convert_to_long_ex(tmpzval);
-            level = Z_LVAL_PP(tmpzval);
-        }
-#endif
     }
     if (level > BROTLI_MAX_QUALITY) {
         php_error_docref(NULL, E_WARNING,
@@ -974,7 +960,7 @@ zend_module_entry brotli_module_entry = {
     STANDARD_MODULE_HEADER_EX,
     NULL,
     brotli_module_deps,
-#elif ZEND_MODULE_API_NO >= 20010901
+#else
     STANDARD_MODULE_HEADER,
 #endif
     "brotli",
@@ -984,9 +970,7 @@ zend_module_entry brotli_module_entry = {
     ZEND_RINIT(brotli),
     ZEND_RSHUTDOWN(brotli),
     ZEND_MINFO(brotli),
-#if ZEND_MODULE_API_NO >= 20010901
     BROTLI_EXT_VERSION,
-#endif
     STANDARD_MODULE_PROPERTIES
 };
 
@@ -1000,11 +984,8 @@ ZEND_GET_MODULE(brotli)
 static ZEND_FUNCTION(brotli_compress)
 {
     char *in;
-#if ZEND_MODULE_API_NO >= 20141001
     size_t in_size;
-#else
-    int in_size;
-#endif
+
     long quality = BROTLI_DEFAULT_QUALITY;
     long mode =  BROTLI_MODE_GENERIC;
 
@@ -1038,11 +1019,7 @@ static ZEND_FUNCTION(brotli_compress)
         RETURN_FALSE;
     }
 
-#if ZEND_MODULE_API_NO >= 20141001
     RETVAL_STRINGL(out, out_size);
-#else
-    RETVAL_STRINGL(out, out_size, 1);
-#endif
     efree(out);
 }
 
@@ -1156,13 +1133,8 @@ static ZEND_FUNCTION(brotli_uncompress)
 {
     long max_size = 0;
     char *in;
-#if ZEND_MODULE_API_NO >= 20141001
     size_t in_size;
     smart_string out = {0};
-#else
-    int in_size;
-    smart_str out = {0};
-#endif
 
     if (zend_parse_parameters(ZEND_NUM_ARGS(), "s|l",
                               &in, &in_size, &max_size) == FAILURE) {
@@ -1194,11 +1166,7 @@ static ZEND_FUNCTION(brotli_uncompress)
                                                0);
         size_t used_out = buffer_size - available_out;
         if (used_out != 0) {
-#if ZEND_MODULE_API_NO >= 20141001
             smart_string_appendl(&out, buffer, used_out);
-#else
-            smart_str_appendl(&out, buffer, used_out);
-#endif
         }
     }
 
@@ -1208,28 +1176,14 @@ static ZEND_FUNCTION(brotli_uncompress)
     if (result != BROTLI_DECODER_RESULT_SUCCESS) {
         php_error_docref(NULL, E_WARNING,
                          "Brotli decompress failed\n");
-#if ZEND_MODULE_API_NO >= 20141001
         smart_string_free(&out);
-#else
-        smart_str_free(&out);
-#endif
         RETURN_FALSE;
     }
 
-#if ZEND_MODULE_API_NO >= 20141001
     RETVAL_STRINGL(out.c, out.len);
-#else
-    RETVAL_STRINGL(out.c, out.len, 1);
-#endif
-
-#if ZEND_MODULE_API_NO >= 20141001
     smart_string_free(&out);
-#else
-    smart_str_free(&out);
-#endif
 }
 
-#if PHP_VERSION_ID >= 70000
 static ZEND_FUNCTION(brotli_uncompress_init)
 {
     php_brotli_state_context *ctx;
@@ -1300,7 +1254,6 @@ static ZEND_FUNCTION(brotli_uncompress_add)
     efree(buffer);
     smart_string_free(&out);
 }
-#endif
 
 #if defined(HAVE_APCU_SUPPORT)
 static int APC_SERIALIZER_NAME(brotli)(APC_SERIALIZER_ARGS)
