@@ -1,0 +1,175 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<package packagerversion="1.10.13" version="2.0" xmlns="http://pear.php.net/dtd/package-2.0" xmlns:tasks="http://pear.php.net/dtd/tasks-1.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://pear.php.net/dtd/tasks-1.0 http://pear.php.net/dtd/tasks-1.0.xsd http://pear.php.net/dtd/package-2.0 http://pear.php.net/dtd/package-2.0.xsd">
+ <name>brotli</name>
+ <channel>pecl.php.net</channel>
+ <summary>Brotli extension</summary>
+ <description>PHP extension for compression and decompression with Brotli library.</description>
+ <lead>
+  <name>Tatsuya KAMIJO</name>
+  <user>kjdev</user>
+  <email>kjdev@php.net</email>
+  <active>yes</active>
+ </lead>
+ <date>2024-02-01</date>
+ <version>
+  <release>0.15.0</release>
+  <api>0.15.0</api>
+ </version>
+ <stability>
+  <release>stable</release>
+  <api>stable</api>
+ </stability>
+ <license>MIT</license>
+ <notes>
+- change: default mode of brotli_uncompress_add() to BROTLI_FLUSH
+- change: default mode of brotli_compress_add() to BROTLI_FLUSH
+- add: BROTLI_FLUSH to environment variables
+- remove: PHP 5 support
+ </notes>
+ <contents>
+  <dir name="/">
+   <file name="LICENSE" role="doc" />
+   <file name="README.md" role="doc" />
+   <file name="brotli.c" role="src" />
+   <file name="config.m4" role="src" />
+   <file name="config.w32" role="src" />
+   <file name="php_brotli.h" role="src" />
+   <file name="brotli/LICENSE" role="doc" />
+   <file name="brotli/c/common/constants.c" role="src" />
+   <file name="brotli/c/common/constants.h" role="src" />
+   <file name="brotli/c/common/context.c" role="src" />
+   <file name="brotli/c/common/context.h" role="src" />
+   <file name="brotli/c/common/dictionary.c" role="src" />
+   <file name="brotli/c/common/dictionary.h" role="src" />
+   <file name="brotli/c/common/platform.c" role="src" />
+   <file name="brotli/c/common/platform.h" role="src" />
+   <file name="brotli/c/common/shared_dictionary.c" role="src" />
+   <file name="brotli/c/common/shared_dictionary_internal.h" role="src" />
+   <file name="brotli/c/common/transform.c" role="src" />
+   <file name="brotli/c/common/transform.h" role="src" />
+   <file name="brotli/c/common/version.h" role="src" />
+   <file name="brotli/c/dec/bit_reader.c" role="src" />
+   <file name="brotli/c/dec/bit_reader.h" role="src" />
+   <file name="brotli/c/dec/decode.c" role="src" />
+   <file name="brotli/c/dec/huffman.c" role="src" />
+   <file name="brotli/c/dec/huffman.h" role="src" />
+   <file name="brotli/c/dec/prefix.h" role="src" />
+   <file name="brotli/c/dec/state.c" role="src" />
+   <file name="brotli/c/dec/state.h" role="src" />
+   <file name="brotli/c/enc/backward_references.c" role="src" />
+   <file name="brotli/c/enc/backward_references.h" role="src" />
+   <file name="brotli/c/enc/backward_references_hq.c" role="src" />
+   <file name="brotli/c/enc/backward_references_hq.h" role="src" />
+   <file name="brotli/c/enc/backward_references_inc.h" role="src" />
+   <file name="brotli/c/enc/bit_cost.c" role="src" />
+   <file name="brotli/c/enc/bit_cost.h" role="src" />
+   <file name="brotli/c/enc/bit_cost_inc.h" role="src" />
+   <file name="brotli/c/enc/block_encoder_inc.h" role="src" />
+   <file name="brotli/c/enc/block_splitter.c" role="src" />
+   <file name="brotli/c/enc/block_splitter.h" role="src" />
+   <file name="brotli/c/enc/block_splitter_inc.h" role="src" />
+   <file name="brotli/c/enc/brotli_bit_stream.c" role="src" />
+   <file name="brotli/c/enc/brotli_bit_stream.h" role="src" />
+   <file name="brotli/c/enc/cluster.c" role="src" />
+   <file name="brotli/c/enc/cluster.h" role="src" />
+   <file name="brotli/c/enc/cluster_inc.h" role="src" />
+   <file name="brotli/c/enc/command.c" role="src" />
+   <file name="brotli/c/enc/command.h" role="src" />
+   <file name="brotli/c/enc/compound_dictionary.c" role="src" />
+   <file name="brotli/c/enc/compound_dictionary.h" role="src" />
+   <file name="brotli/c/enc/compress_fragment.c" role="src" />
+   <file name="brotli/c/enc/compress_fragment.h" role="src" />
+   <file name="brotli/c/enc/compress_fragment_two_pass.c" role="src" />
+   <file name="brotli/c/enc/compress_fragment_two_pass.h" role="src" />
+   <file name="brotli/c/enc/dictionary_hash.c" role="src" />
+   <file name="brotli/c/enc/dictionary_hash.h" role="src" />
+   <file name="brotli/c/enc/encode.c" role="src" />
+   <file name="brotli/c/enc/encoder_dict.c" role="src" />
+   <file name="brotli/c/enc/encoder_dict.h" role="src" />
+   <file name="brotli/c/enc/entropy_encode.c" role="src" />
+   <file name="brotli/c/enc/entropy_encode.h" role="src" />
+   <file name="brotli/c/enc/entropy_encode_static.h" role="src" />
+   <file name="brotli/c/enc/fast_log.c" role="src" />
+   <file name="brotli/c/enc/fast_log.h" role="src" />
+   <file name="brotli/c/enc/find_match_length.h" role="src" />
+   <file name="brotli/c/enc/hash.h" role="src" />
+   <file name="brotli/c/enc/hash_composite_inc.h" role="src" />
+   <file name="brotli/c/enc/hash_forgetful_chain_inc.h" role="src" />
+   <file name="brotli/c/enc/hash_longest_match64_inc.h" role="src" />
+   <file name="brotli/c/enc/hash_longest_match_inc.h" role="src" />
+   <file name="brotli/c/enc/hash_longest_match_quickly_inc.h" role="src" />
+   <file name="brotli/c/enc/hash_rolling_inc.h" role="src" />
+   <file name="brotli/c/enc/hash_to_binary_tree_inc.h" role="src" />
+   <file name="brotli/c/enc/histogram.c" role="src" />
+   <file name="brotli/c/enc/histogram.h" role="src" />
+   <file name="brotli/c/enc/histogram_inc.h" role="src" />
+   <file name="brotli/c/enc/literal_cost.c" role="src" />
+   <file name="brotli/c/enc/literal_cost.h" role="src" />
+   <file name="brotli/c/enc/memory.c" role="src" />
+   <file name="brotli/c/enc/memory.h" role="src" />
+   <file name="brotli/c/enc/metablock.c" role="src" />
+   <file name="brotli/c/enc/metablock.h" role="src" />
+   <file name="brotli/c/enc/metablock_inc.h" role="src" />
+   <file name="brotli/c/enc/params.h" role="src" />
+   <file name="brotli/c/enc/prefix.h" role="src" />
+   <file name="brotli/c/enc/quality.h" role="src" />
+   <file name="brotli/c/enc/ringbuffer.h" role="src" />
+   <file name="brotli/c/enc/state.h" role="src" />
+   <file name="brotli/c/enc/static_dict.c" role="src" />
+   <file name="brotli/c/enc/static_dict.h" role="src" />
+   <file name="brotli/c/enc/static_dict_lut.h" role="src" />
+   <file name="brotli/c/enc/utf8_util.c" role="src" />
+   <file name="brotli/c/enc/utf8_util.h" role="src" />
+   <file name="brotli/c/enc/write_bits.h" role="src" />
+   <file name="brotli/c/include/brotli/decode.h" role="src" />
+   <file name="brotli/c/include/brotli/encode.h" role="src" />
+   <file name="brotli/c/include/brotli/port.h" role="src" />
+   <file name="brotli/c/include/brotli/shared_dictionary.h" role="src" />
+   <file name="brotli/c/include/brotli/types.h" role="src" />
+   <file name="tests/alias.phpt" role="test" />
+   <file name="tests/apcu_serializer.phpt" role="test" />
+   <file name="tests/bug61820.phpt" role="test" />
+   <file name="tests/bug65391.phpt" role="test" />
+   <file name="tests/compatibility.phpt" role="test" />
+   <file name="tests/compress_add.phpt" role="test" />
+   <file name="tests/data.inc" role="test" />
+   <file name="tests/files.inc" role="test" />
+   <file name="tests/incremental_compress_add_alias.phpt" role="test" />
+   <file name="tests/incremental_compress_add_args.phpt" role="test" />
+   <file name="tests/incremental_compress_add_basic.phpt" role="test" />
+   <file name="tests/incremental_uncompress_add_alias.phpt" role="test" />
+   <file name="tests/incremental_uncompress_add_basic.phpt" role="test" />
+   <file name="tests/info.phpt" role="test" />
+   <file name="tests/ob_001.phpt" role="test" />
+   <file name="tests/ob_002.phpt" role="test" />
+   <file name="tests/ob_003.phpt" role="test" />
+   <file name="tests/ob_004.phpt" role="test" />
+   <file name="tests/ob_005.phpt" role="test" />
+   <file name="tests/ob_006.phpt" role="test" />
+   <file name="tests/ob_007.phpt" role="test" />
+   <file name="tests/ob_008.phpt" role="test" />
+   <file name="tests/ob_009.phpt" role="test" />
+   <file name="tests/ob_010.phpt" role="test" />
+   <file name="tests/ob_011.phpt" role="test" />
+   <file name="tests/roundtrip.phpt" role="test" />
+   <file name="tests/streams_001.phpt" role="test" />
+   <file name="tests/streams_002.phpt" role="test" />
+   <file name="tests/streams_003.phpt" role="test" />
+   <file name="tests/streams_004.phpt" role="test" />
+   <file name="tests/streams_005.phpt" role="test" />
+   <file name="tests/streams_006.phpt" role="test" />
+  </dir>
+ </contents>
+ <dependencies>
+  <required>
+   <php>
+    <min>7.0</min>
+   </php>
+   <pearinstaller>
+    <min>1.4.0</min>
+   </pearinstaller>
+  </required>
+ </dependencies>
+ <providesextension>brotli</providesextension>
+ <extsrcrelease />
+</package>
