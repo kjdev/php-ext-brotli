@@ -60,8 +60,6 @@ brotli.output\_compression\_level | -1      | PHP\_INI\_ALL
     Specify a value between 0 to 11.
     The default value of -1 uses internally defined values (11).
 
-> Available since PHP 5.4.0.
-
 ## Constant
 
 Name                              | Description
@@ -74,10 +72,10 @@ BROTLI\_COMPRESS\_LEVEL\_DEFAULT  | Default compress level value
 
 * brotli\_compress — Compress a string
 * brotli\_uncompress — Uncompress a compressed string
-* brotli\_compress\_init — Initialize an incremental compress context (PHP 7)
-* brotli\_compress\_add — Incrementally compress data (PHP 7)
-* brotli\_uncompress\_init — Initialize an incremental uncompress context (PHP 7)
-* brotli\_uncompress\_add — Incrementally uncompress data (PHP 7)
+* brotli\_compress\_init — Initialize an incremental compress context
+* brotli\_compress\_add — Incrementally compress data
+* brotli\_uncompress\_init — Initialize an incremental uncompress context
+* brotli\_uncompress\_add — Incrementally uncompress data
 
 ---
 ### brotli\_compress — Compress a string
@@ -138,7 +136,7 @@ The original uncompressed data or FALSE on error.
 
 resource **brotli\_compress\_init** ( [ int _$quality_ = BROTLI\_COMPRESS\_LEVEL\_DEFAULT, int _$mode_ = BROTLI\_GENERIC ] )
 
-Initialize an incremental compress context. (PHP 7)
+Initialize an incremental compress context.
 
 #### Parameters
 
@@ -164,7 +162,7 @@ or FALSE on failure.
 
 string **brotli\_compress\_add** ( resource _$context_, string _$data_ [, _$mode_ = BROTLI\_FLUSH ] )
 
-Incrementally compress data. (PHP 7)
+Incrementally compress data.
 
 #### Parameters
 
@@ -193,7 +191,7 @@ Returns a chunk of compressed data, or FALSE on failure.
 
 resource **brotli\_uncompress\_init** ( void )
 
-Initialize an incremental uncompress context. (PHP 7)
+Initialize an incremental uncompress context.
 
 #### Return Values
 
@@ -207,7 +205,7 @@ or FALSE on failure.
 
 string **brotli\_uncompress\_add** ( resource _$context_, string _$data_ [, _$mode_ = BROTLI\_FLUSH ] )
 
-Incrementally uncompress data. (PHP 7)
+Incrementally uncompress data.
 
 #### Parameters
 
