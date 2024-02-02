@@ -636,7 +636,7 @@ static int php_brotli_compress_close(php_stream *stream,
             }
         } else {
             php_error_docref(NULL, E_WARNING,
-                             "brotli compress error\n");
+                             "brotli compress error");
         }
     }
 
@@ -698,7 +698,7 @@ static ssize_t php_brotli_compress_write(php_stream *stream,
                 php_stream_write(self->stream, output, out_size);
             }
         } else {
-            php_error_docref(NULL, E_WARNING, "brotli compress error\n");
+            php_error_docref(NULL, E_WARNING, "brotli compress error");
 #if PHP_VERSION_ID >= 70400
             return -1;
 #endif
@@ -1015,7 +1015,7 @@ static ZEND_FUNCTION(brotli_compress)
                                in_size, (const uint8_t*)in,
                                &out_size, (uint8_t*)out)) {
         php_error_docref(NULL, E_WARNING,
-                         "Brotli compress failed\n");
+                         "Brotli compress failed");
         efree(out);
         RETURN_FALSE;
     }
@@ -1041,7 +1041,7 @@ static ZEND_FUNCTION(brotli_compress_init)
     if (php_brotli_encoder_create(&ctx->encoder,
                                   quality, 0, mode) != SUCCESS) {
         php_error_docref(NULL, E_WARNING,
-                         "Brotli incremental compress init failed\n");
+                         "Brotli incremental compress init failed");
         RETURN_FALSE;
     }
 
@@ -1068,7 +1068,7 @@ static ZEND_FUNCTION(brotli_compress_add)
     ctx = zend_fetch_resource(Z_RES_P(res), NULL, le_state);
     if (ctx == NULL || ctx->encoder == NULL) {
         php_error_docref(NULL, E_WARNING,
-                         "Brotli incremental compress resource failed\n");
+                         "Brotli incremental compress resource failed");
         RETURN_FALSE;
     }
 
@@ -1097,7 +1097,7 @@ static ZEND_FUNCTION(brotli_compress_add)
             efree(buffer);
             smart_string_free(&out);
             php_error_docref(NULL, E_WARNING,
-                             "Brotli incremental compress failed\n");
+                             "Brotli incremental compress failed");
             RETURN_FALSE;
         }
     }
@@ -1121,7 +1121,7 @@ static ZEND_FUNCTION(brotli_compress_add)
                 efree(buffer);
                 smart_string_free(&out);
                 php_error_docref(NULL, E_WARNING,
-                                 "Brotli incremental compress failed\n");
+                                 "Brotli incremental compress failed");
                 RETURN_FALSE;
             }
         }
@@ -1153,7 +1153,7 @@ static ZEND_FUNCTION(brotli_uncompress)
     BrotliDecoderState *state = BrotliDecoderCreateInstance(NULL, NULL, NULL);
     if (!state) {
         php_error_docref(NULL, E_WARNING,
-                         "Invalid Brotli state\n");
+                         "Invalid Brotli state");
         RETURN_FALSE;
     }
 
@@ -1180,7 +1180,7 @@ static ZEND_FUNCTION(brotli_uncompress)
 
     if (result != BROTLI_DECODER_RESULT_SUCCESS) {
         php_error_docref(NULL, E_WARNING,
-                         "Brotli decompress failed\n");
+                         "Brotli decompress failed");
         smart_string_free(&out);
         RETURN_FALSE;
     }
@@ -1201,7 +1201,7 @@ static ZEND_FUNCTION(brotli_uncompress_init)
 
     if (php_brotli_decoder_create(&ctx->decoder) != SUCCESS) {
         php_error_docref(NULL, E_WARNING,
-                         "Brotli incremental uncompress init failed\n");
+                         "Brotli incremental uncompress init failed");
         RETURN_FALSE;
     }
 
@@ -1228,7 +1228,7 @@ static ZEND_FUNCTION(brotli_uncompress_add)
     ctx = zend_fetch_resource(Z_RES_P(res), NULL, le_state);
     if (ctx == NULL || ctx->decoder == NULL) {
         php_error_docref(NULL, E_WARNING,
-                         "Brotli incremental uncompress resource failed\n");
+                         "Brotli incremental uncompress resource failed");
         RETURN_FALSE;
     }
 
