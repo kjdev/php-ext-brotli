@@ -14,8 +14,8 @@ else
     AC_MSG_RESULT($PHP_VERSION_ID)
 fi
 
-if test $PHP_VERSION_ID -lt 50000; then
-   AC_MSG_ERROR([need at least PHP 5 or newer])
+if test $PHP_VERSION_ID -lt 70000; then
+   AC_MSG_ERROR([need at least PHP 7 or newer])
 fi
 
 PHP_ARG_ENABLE(brotli, whether to enable brotli support,
