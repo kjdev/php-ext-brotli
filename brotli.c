@@ -356,6 +356,10 @@ php_brotli_output_handler_init(const char *handler_name,
         return NULL;
     }
 
+    if (!BROTLI_G(output_compression)) {
+        BROTLI_G(output_compression) = 1;
+    }
+
     BROTLI_G(handler_registered) = 1;
 
     if (!BROTLI_G(ob_handler)) {
@@ -365,8 +369,6 @@ php_brotli_output_handler_init(const char *handler_name,
     php_output_handler_set_context(handler,
                                    BROTLI_G(ob_handler),
                                    php_brotli_output_handler_context_dtor);
-
-    BROTLI_G(output_compression) = 1;
 
     return handler;
 }
@@ -443,6 +445,8 @@ static PHP_INI_MH(OnUpdate_brotli_output_compression)
     p = (zend_long *)(base+(size_t) mh_arg1);
     *p = int_value;
 
+    BROTLI_G(output_compression) = BROTLI_G(output_compression_default);
+
     if (stage == PHP_INI_STAGE_RUNTIME && int_value) {
         if (!php_output_handler_started(ZEND_STRL(PHP_BROTLI_OUTPUT_HANDLER))) {
             php_brotli_output_compression_start();
@@ -466,9 +470,10 @@ static int php_brotli_output_conflict(const char *handler_name, size_t handler_n
 }
 
 PHP_INI_BEGIN()
-  STD_PHP_INI_ENTRY("brotli.output_compression", "0",
-                    PHP_INI_ALL, OnUpdate_brotli_output_compression,
-                    output_compression, zend_brotli_globals, brotli_globals)
+  STD_PHP_INI_BOOLEAN("brotli.output_compression", "0",
+                      PHP_INI_ALL, OnUpdate_brotli_output_compression,
+                      output_compression_default,
+                      zend_brotli_globals, brotli_globals)
   STD_PHP_INI_ENTRY("brotli.output_compression_level", "-1",
                     PHP_INI_ALL, OnUpdateLong, output_compression_level,
                     zend_brotli_globals, brotli_globals)
@@ -914,6 +919,7 @@ ZEND_RINIT_FUNCTION(brotli)
 {
     BROTLI_G(compression_coding) = 0;
     if (!BROTLI_G(handler_registered)) {
+        BROTLI_G(output_compression) = BROTLI_G(output_compression_default);
         php_brotli_output_compression_start();
     }
     return SUCCESS;
@@ -921,9 +927,7 @@ ZEND_RINIT_FUNCTION(brotli)
 
 ZEND_RSHUTDOWN_FUNCTION(brotli)
 {
-    if (BROTLI_G(handler_registered)) {
-        php_brotli_cleanup_ob_handler_mess();
-    }
+    php_brotli_cleanup_ob_handler_mess();
     BROTLI_G(handler_registered) = 0;
     return SUCCESS;
 }

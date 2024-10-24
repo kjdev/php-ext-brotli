@@ -44,6 +44,7 @@ typedef struct _php_brotli_context {
 
 ZEND_BEGIN_MODULE_GLOBALS(brotli)
   zend_long output_compression;
+  zend_long output_compression_default;
   zend_long output_compression_level;
   zend_bool handler_registered;
   int compression_coding;
