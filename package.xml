@@ -10,10 +10,10 @@
   <email>kjdev@php.net</email>
   <active>yes</active>
  </lead>
- <date>2024-02-01</date>
+ <date>2024-11-05</date>
  <version>
-  <release>0.15.0</release>
-  <api>0.15.0</api>
+  <release>0.15.1</release>
+  <api>0.15.1</api>
  </version>
  <stability>
   <release>stable</release>
@@ -21,10 +21,7 @@
  </stability>
  <license>MIT</license>
  <notes>
-- change: default mode of brotli_uncompress_add() to BROTLI_FLUSH
-- change: default mode of brotli_compress_add() to BROTLI_FLUSH
-- add: BROTLI_FLUSH to environment variables
-- remove: PHP 5 support
+- fix: output handler
  </notes>
  <contents>
   <dir name="/">
