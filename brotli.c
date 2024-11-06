@@ -990,8 +990,8 @@ static ZEND_FUNCTION(brotli_compress)
     char *in;
     size_t in_size;
 
-    long quality = BROTLI_DEFAULT_QUALITY;
-    long mode =  BROTLI_MODE_GENERIC;
+    zend_long quality = BROTLI_DEFAULT_QUALITY;
+    zend_long mode =  BROTLI_MODE_GENERIC;
 
     ZEND_PARSE_PARAMETERS_START(1, 3)
         Z_PARAM_STRING(in, in_size)
@@ -1030,8 +1030,8 @@ static ZEND_FUNCTION(brotli_compress)
 
 static ZEND_FUNCTION(brotli_compress_init)
 {
-    long quality = BROTLI_DEFAULT_QUALITY;
-    long mode =  BROTLI_MODE_GENERIC;
+    zend_long quality = BROTLI_DEFAULT_QUALITY;
+    zend_long mode =  BROTLI_MODE_GENERIC;
     php_brotli_state_context *ctx;
 
     ZEND_PARSE_PARAMETERS_START(0, 2)
@@ -1139,7 +1139,7 @@ static ZEND_FUNCTION(brotli_compress_add)
 
 static ZEND_FUNCTION(brotli_uncompress)
 {
-    long max_size = 0;
+    zend_long max_size = 0;
     char *in;
     size_t in_size;
     smart_string out = {0};
