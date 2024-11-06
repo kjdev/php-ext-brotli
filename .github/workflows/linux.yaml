@@ -22,22 +22,39 @@ jobs:
           - ''
           - 'apcu'
         image: [php]
+        platform: [linux/amd64]
         include:
+          - php: '8.3-alpine'
+            image: php
+            platform: linux/386
+          - php: '8.2-alpine'
+            image: php
+            platform: linux/386
+          - php: '8.1-alpine'
+            image: php
+            platform: linux/386
           - php: '8.0-alpine'
             image: ghcr.io/kjdev/php
+            platform: linux/amd64
           - php: '7.4-alpine'
             image: ghcr.io/kjdev/php
+            platform: linux/amd64
           - php: '7.3-alpine'
             image: ghcr.io/kjdev/php
+            platform: linux/amd64
           - php: '7.2-alpine'
             image: ghcr.io/kjdev/php
+            platform: linux/amd64
           - php: '7.1-alpine'
             image: ghcr.io/kjdev/php
+            platform: linux/amd64
           - php: '7.0-alpine'
             image: ghcr.io/kjdev/php
+            platform: linux/amd64
 
     container:
       image: ${{ matrix.image }}:${{ matrix.php }}
+      options: --platform ${{ matrix.platform }}
 
     steps:
       - name: Prepare required command (alpine)
@@ -55,6 +72,11 @@ jobs:
         run: git config --global --add safe.directory $GITHUB_WORKSPACE
       - name: Checkout repository
         uses: actions/checkout@v4
+        if: ${{ contains(matrix.platform, 'linux/amd64') }}
+      - name: Clone repository
+        run: |
+          git clone -b $GITHUB_REF_NAME $GITHUB_SERVER_URL/$GITHUB_REPOSITORY $GITHUB_WORKSPACE
+        if: ${{ contains(matrix.platform, 'linux/386') }}
       - name: Checkout submodules
         run: |
           git submodule update --init --recursive
