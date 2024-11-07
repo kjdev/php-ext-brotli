@@ -25,12 +25,15 @@ jobs:
         platform: [linux/amd64]
         include:
           - php: '8.3-alpine'
+            apcu: 'apcu'
             image: php
             platform: linux/386
           - php: '8.2-alpine'
+            apcu: 'apcu'
             image: php
             platform: linux/386
           - php: '8.1-alpine'
+            apcu: 'apcu'
             image: php
             platform: linux/386
           - php: '8.0-alpine'
