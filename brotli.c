@@ -1353,7 +1353,8 @@ static int APC_UNSERIALIZER_NAME(brotli)(APC_UNSERIALIZER_ARGS)
 
     if (!result) {
         php_error_docref(NULL, E_NOTICE,
-                         "Error at offset %ld of %ld bytes",
+                         "Error at offset " ZEND_LONG_FMT
+                         " of " ZEND_LONG_FMT " bytes",
                          (zend_long) ((char*) tmp - ZSTR_VAL(out.s)),
                          (zend_long) ZSTR_LEN(out.s));
         ZVAL_NULL(value);
