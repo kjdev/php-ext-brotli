@@ -35,7 +35,7 @@ var_dump($decomp == $data);
 ?>
 ===DONE===
 --EXPECTF--
-Compression with defaul level
+Compression with default level
 bool(true)
 int(%d)
 bool(true)
