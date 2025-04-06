@@ -6,7 +6,7 @@ include(dirname(__FILE__) . '/data.inc');
 
 $file = dirname(__FILE__) . '/data.out';
 
-echo "Compression with defaul level\n";
+echo "Compression with default level\n";
 
 var_dump(file_put_contents('compress.brotli://' . $file, $data) == strlen($data));
 var_dump($size1 = filesize($file));
@@ -24,7 +24,7 @@ $ctx = stream_context_create(
 
 var_dump(file_put_contents('compress.brotli://' . $file, $data, 0, $ctx) == strlen($data));
 var_dump($size2 = filesize($file));
-var_dump($size2 > 1 && $size2 <= $size1);
+var_dump($size2 > 1 && $size2 <= strlen($data));
 
 echo "Decompression\n";
 
@@ -35,7 +35,7 @@ var_dump($decomp == $data);
 ?>
 ===DONE===
 --EXPECTF--
-Compression with defaul level
+Compression with default level
 bool(true)
 int(%d)
 bool(true)
