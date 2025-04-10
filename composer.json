@@ -1,0 +1,14 @@
+{
+  "name": "kjdev/brotli",
+  "type": "php-ext",
+  "license": "MIT",
+  "description": "A compression/decompression with Brotli",
+  "require": {
+    "php": ">= 7.0.0"
+  },
+  "php-ext": {
+    "extension-name": "brotli",
+    "download-url-method": "pre-packaged-source",
+    "configure-options": []
+  }
+}
