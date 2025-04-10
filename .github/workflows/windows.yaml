@@ -61,6 +61,12 @@ jobs:
           VCPKG_LIBRARY: brotli
         if: ${{ matrix.library }}
 
+      - uses: actions/cache@v4
+        with:
+          path: |
+            C:\php\php-*.zip
+          key: ${{ runner.os }}-php
+
       - name: Install build command
         run: .\.github\workflows\install.ps1
 
