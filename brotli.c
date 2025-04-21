@@ -947,6 +947,48 @@ static zend_class_entry *php_brotli_compress_context_register_class(void)
     return class_entry;
 }
 
+/* Brotli UnCompress Context */
+zend_class_entry *php_brotli_uncompress_context_ce;
+static zend_object_handlers php_brotli_uncompress_context_object_handlers;
+
+static zend_object *
+php_brotli_uncompress_context_create_object(zend_class_entry *class_type)
+{
+    return php_brotli_context_create_object(
+        class_type,
+        &php_brotli_uncompress_context_object_handlers);
+}
+
+static zend_function *
+php_brotli_uncompress_context_get_constructor(zend_object *object)
+{
+  zend_throw_error(NULL,
+                   "Cannot directly construct Brotli\\UnCompress\\Context, "
+                   "use brotli_uncompress_init() instead");
+  return NULL;
+}
+
+static zend_class_entry *php_brotli_uncompress_context_register_class(void)
+{
+    zend_class_entry ce, *class_entry;
+
+    INIT_NS_CLASS_ENTRY(ce, "Brotli\\UnCompress", "Context", NULL);
+#if PHP_VERSION_ID >= 80000
+    class_entry = zend_register_internal_class_ex(&ce, NULL);
+#if PHP_VERSION_ID >= 80100
+    class_entry->ce_flags |= ZEND_ACC_FINAL|ZEND_ACC_NO_DYNAMIC_PROPERTIES|ZEND_ACC_NOT_SERIALIZABLE;
+#else
+    class_entry->ce_flags |= ZEND_ACC_FINAL|ZEND_ACC_NO_DYNAMIC_PROPERTIES;
+#endif
+#else
+    ce.create_object = php_brotli_uncompress_context_create_object;
+    class_entry = zend_register_internal_class(&ce);
+    class_entry->ce_flags |= ZEND_ACC_FINAL;
+#endif
+
+    return class_entry;
+}
+
 ZEND_MINIT_FUNCTION(brotli)
 {
     ZEND_INIT_MODULE_GLOBALS(brotli, php_brotli_init_globals, NULL);
@@ -1007,6 +1049,34 @@ ZEND_MINIT_FUNCTION(brotli)
     php_brotli_compress_context_object_handlers.clone_obj = NULL;
 #if PHP_VERSION_ID >= 80000
     php_brotli_compress_context_object_handlers.compare
+        = zend_objects_not_comparable;
+#endif
+
+    php_brotli_uncompress_context_ce
+        = php_brotli_uncompress_context_register_class();
+#if PHP_VERSION_ID >= 80000
+    php_brotli_uncompress_context_ce->create_object
+        = php_brotli_uncompress_context_create_object;
+#if PHP_VERSION_ID >= 80300
+    php_brotli_uncompress_context_ce->default_object_handlers
+        = &php_brotli_uncompress_context_object_handlers;
+#endif
+#if PHP_VERSION_ID < 80100
+    php_brotli_uncompress_context_ce->serialize = zend_class_serialize_deny;
+    php_brotli_uncompress_context_ce->unserialize = zend_class_unserialize_deny;
+#endif
+#endif
+    memcpy(&php_brotli_uncompress_context_object_handlers,
+           &std_object_handlers, sizeof(zend_object_handlers));
+    php_brotli_uncompress_context_object_handlers.offset
+        = XtOffsetOf(php_brotli_context, std);
+    php_brotli_uncompress_context_object_handlers.free_obj
+        = php_brotli_context_free_obj;
+    php_brotli_uncompress_context_object_handlers.get_constructor
+        = php_brotli_uncompress_context_get_constructor;
+    php_brotli_uncompress_context_object_handlers.clone_obj = NULL;
+#if PHP_VERSION_ID >= 80000
+    php_brotli_uncompress_context_object_handlers.compare
         = zend_objects_not_comparable;
 #endif
 
@@ -1323,42 +1393,51 @@ static ZEND_FUNCTION(brotli_uncompress)
 
 static ZEND_FUNCTION(brotli_uncompress_init)
 {
-    php_brotli_state_context *ctx;
-
     if (zend_parse_parameters_none() == FAILURE) {
         RETURN_FALSE;
     }
 
-    ctx = php_brotli_state_init();
+    PHP_BROTLI_CONTEXT_OBJ_INIT_OF_CLASS(php_brotli_uncompress_context_ce);
 
-    if (php_brotli_decoder_create(&ctx->decoder) != SUCCESS) {
+    if (php_brotli_decoder_create(&ctx->state.decoder) != SUCCESS) {
         php_error_docref(NULL, E_WARNING,
                          "Brotli incremental uncompress init failed");
         RETURN_FALSE;
     }
-
-    RETURN_RES(zend_register_resource(ctx, le_state));
 }
 
 static ZEND_FUNCTION(brotli_uncompress_add)
 {
     zval *res;
-    php_brotli_state_context *ctx;
+    php_brotli_context *ctx;
     size_t buffer_size;
     zend_long mode = BROTLI_OPERATION_FLUSH;
+#if PHP_VERSION_ID >= 80000
+    zend_object *obj;
+#else
+    zval *obj;
+#endif
     char *in_buf;
     size_t in_size;
     smart_string out = {0};
 
     ZEND_PARSE_PARAMETERS_START(2, 3)
-        Z_PARAM_RESOURCE(res)
+#if PHP_VERSION_ID >= 80000
+        Z_PARAM_OBJ_OF_CLASS(obj, php_brotli_uncompress_context_ce)
+#else
+        Z_PARAM_OBJECT_OF_CLASS(obj, php_brotli_uncompress_context_ce)
+#endif
         Z_PARAM_STRING(in_buf, in_size)
         Z_PARAM_OPTIONAL
         Z_PARAM_LONG(mode)
     ZEND_PARSE_PARAMETERS_END();
 
-    ctx = zend_fetch_resource(Z_RES_P(res), NULL, le_state);
-    if (ctx == NULL || ctx->decoder == NULL) {
+#if PHP_VERSION_ID >= 80000
+    ctx = php_brotli_context_from_obj(obj);
+#else
+    ctx = php_brotli_context_from_obj(Z_OBJ_P(obj));
+#endif
+    if (ctx == NULL || ctx->state.decoder == NULL) {
         php_error_docref(NULL, E_WARNING,
                          "Brotli incremental uncompress resource failed");
         RETURN_FALSE;
@@ -1371,18 +1450,20 @@ static ZEND_FUNCTION(brotli_uncompress_add)
     buffer_size = PHP_BROTLI_BUFFER_SIZE;
     uint8_t *buffer = (uint8_t *)emalloc(buffer_size);
 
-    const uint8_t *next_in = (const uint8_t *)in_buf;
-    size_t available_in = in_size;
+    ctx->next_in = (const uint8_t *)in_buf;
+    ctx->available_in = in_size;
 
     BrotliDecoderResult result = BROTLI_DECODER_RESULT_NEEDS_MORE_OUTPUT;
     while (result == BROTLI_DECODER_RESULT_NEEDS_MORE_OUTPUT) {
-        size_t available_out = buffer_size;
-        uint8_t *next_out = buffer;
-        result = BrotliDecoderDecompressStream(ctx->decoder,
-                                               &available_in, &next_in,
-                                               &available_out, &next_out,
+        ctx->available_out = buffer_size;
+        ctx->next_out = buffer;
+        result = BrotliDecoderDecompressStream(ctx->state.decoder,
+                                               &ctx->available_in,
+                                               &ctx->next_in,
+                                               &ctx->available_out,
+                                               &ctx->next_out,
                                                0);
-        size_t buffer_used = buffer_size - available_out;
+        size_t buffer_used = buffer_size - ctx->available_out;
         if (buffer_used) {
             smart_string_appendl(&out, buffer, buffer_used);
         }
