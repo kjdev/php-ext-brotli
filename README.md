@@ -134,7 +134,7 @@ The original uncompressed data or FALSE on error.
 
 #### Description
 
-resource **brotli\_compress\_init** ( [ int _$quality_ = BROTLI\_COMPRESS\_LEVEL\_DEFAULT, int _$mode_ = BROTLI\_GENERIC ] )
+Brotli\Compress\Context **brotli\_compress\_init** ( [ int _$quality_ = BROTLI\_COMPRESS\_LEVEL\_DEFAULT, int _$mode_ = BROTLI\_GENERIC ] )
 
 Initialize an incremental compress context.
 
@@ -152,7 +152,7 @@ Initialize an incremental compress context.
 
 #### Return Values
 
-Returns a brotli context resource (brotli.state) on success,
+Returns a `Brotli\Compress\Context` instance on success,
 or FALSE on failure.
 
 ---
@@ -160,7 +160,7 @@ or FALSE on failure.
 
 #### Description
 
-string **brotli\_compress\_add** ( resource _$context_, string _$data_ [, _$mode_ = BROTLI\_FLUSH ] )
+string **brotli\_compress\_add** ( Brotli\Compress\Context _$context_, string _$data_ [, _$mode_ = BROTLI\_FLUSH ] )
 
 Incrementally compress data.
 
@@ -189,13 +189,13 @@ Returns a chunk of compressed data, or FALSE on failure.
 
 #### Description
 
-resource **brotli\_uncompress\_init** ( void )
+Brotli\UnCompress\Context **brotli\_uncompress\_init** ( void )
 
 Initialize an incremental uncompress context.
 
 #### Return Values
 
-Returns a brotli context resource (brotli.state) on success,
+Returns a `Brotli\UnCompress\Context` instance on success,
 or FALSE on failure.
 
 ---
@@ -203,7 +203,7 @@ or FALSE on failure.
 
 #### Description
 
-string **brotli\_uncompress\_add** ( resource _$context_, string _$data_ [, _$mode_ = BROTLI\_FLUSH ] )
+string **brotli\_uncompress\_add** ( Brotli\UnCompress\Context _$context_, string _$data_ [, _$mode_ = BROTLI\_FLUSH ] )
 
 Incrementally uncompress data.
 
@@ -235,9 +235,9 @@ Namespace Brotli;
 function compress( $data [, $quality = \\BROTLI\_COMPRESS\_LEVEL\_DEFAULT, $mode = \\BROTLI\_GENERIC ] )
 function uncompress( $data [, $length = 0 ] )
 function compress\_init( [ $quality = \\BROTLI\_COMPRESS\_LEVEL\_DEFAULT, $mode = \\BROTLI\_GENERIC ] )
-function compress\_add( resource $context, string $data [, $mode = \\BROTLI\_FLUSH] )
+function compress\_add( \\Brotli\\Compress\\Context $context, string $data [, $mode = \\BROTLI\_FLUSH] )
 function uncompress\_init()
-function uncompress\_add( resource $context, string $data [, $mode = \\BROTLI\_FLUSH] )
+function uncompress\_add( \\Brotli\\UnCompress\\Context $context, string $data [, $mode = \\BROTLI\_FLUSH] )
 ```
 
 alias functions..
