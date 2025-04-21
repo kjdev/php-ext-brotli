@@ -15,8 +15,6 @@
 #include <Zend/zend_interfaces.h>
 #include "php_brotli.h"
 
-int le_state;
-
 # pragma GCC diagnostic ignored "-Wpointer-sign"
 
 ZEND_DECLARE_MODULE_GLOBALS(brotli);
@@ -131,35 +129,6 @@ static int php_brotli_decoder_create(BrotliDecoderState **decoder)
     }
 
     return SUCCESS;
-}
-
-static php_brotli_state_context* php_brotli_state_init(void)
-{
-    php_brotli_state_context *ctx
-        = (php_brotli_state_context *)ecalloc(1,
-                                              sizeof(php_brotli_state_context));
-    ctx->encoder = NULL;
-    ctx->decoder = NULL;
-    return ctx;
-}
-
-static void php_brotli_state_destroy(php_brotli_state_context *ctx)
-{
-    if (ctx->encoder) {
-        BrotliEncoderDestroyInstance(ctx->encoder);
-        ctx->encoder = NULL;
-    }
-    if (ctx->decoder) {
-        BrotliDecoderDestroyInstance(ctx->decoder);
-        ctx->decoder = NULL;
-    }
-    efree(ctx);
-}
-
-static void php_brotli_state_rsrc_dtor(zend_resource *res)
-{
-    php_brotli_state_context *ctx = zend_fetch_resource(res, NULL, le_state);
-    php_brotli_state_destroy(ctx);
 }
 
 #define PHP_BROTLI_OUTPUT_HANDLER "ob_brotli_handler"
@@ -1014,10 +983,6 @@ ZEND_MINIT_FUNCTION(brotli)
                            CONST_CS | CONST_PERSISTENT);
     REGISTER_LONG_CONSTANT("BROTLI_FINISH", BROTLI_OPERATION_FINISH,
                            CONST_CS | CONST_PERSISTENT);
-
-    le_state = zend_register_list_destructors_ex(php_brotli_state_rsrc_dtor,
-                                                 NULL, "brotli.state",
-                                                 module_number);
 
     php_output_handler_alias_register(ZEND_STRL(PHP_BROTLI_OUTPUT_HANDLER),
                                       php_brotli_output_handler_init);
