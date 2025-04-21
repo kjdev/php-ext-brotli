@@ -40,6 +40,7 @@ typedef struct _php_brotli_context {
     size_t available_out;
     uint8_t *next_out;
     uint8_t *output;
+    zend_object std;
 } php_brotli_context;
 
 ZEND_BEGIN_MODULE_GLOBALS(brotli)
