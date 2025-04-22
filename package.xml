@@ -10,10 +10,10 @@
   <email>kjdev@php.net</email>
   <active>yes</active>
  </lead>
- <date>2024-11-08</date>
+ <date>2025-04-22</date>
  <version>
-  <release>0.15.2</release>
-  <api>0.15.2</api>
+  <release>0.16.0</release>
+  <api>0.16.0</api>
  </version>
  <stability>
   <release>stable</release>
@@ -21,8 +21,8 @@
  </stability>
  <license>MIT</license>
  <notes>
-- fix: argument format of type
-- fix: incompatible pointer type
+- change: brotli.state resource in brotli_uncompress_{init,add}() to Btorli\UnCompress\Context class
+- change: brotli.state resource in brotli_compress_{init,add}() to Btorli\Compress\Context class
  </notes>
  <contents>
   <dir name="/">
