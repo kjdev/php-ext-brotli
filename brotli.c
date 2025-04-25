@@ -37,11 +37,17 @@ ZEND_BEGIN_ARG_WITH_RETURN_TYPE_MASK_EX(arginfo_brotli_compress, 0, 1, MAY_BE_ST
     ZEND_ARG_TYPE_INFO(0, data, IS_STRING, 0)
     ZEND_ARG_TYPE_INFO_WITH_DEFAULT_VALUE(0, quality, IS_LONG, BROTLI_DEFAULT_QUALITY, "BROTLI_COMPRESS_LEVEL_DEFAULT")
     ZEND_ARG_TYPE_INFO_WITH_DEFAULT_VALUE(0, mode, IS_LONG, BROTLI_MODE_GENERIC, "BROTLI_GENERIC")
+#if defined(USE_BROTLI_DICTIONARY)
+    ZEND_ARG_TYPE_INFO_WITH_DEFAULT_VALUE(0, dict, IS_STRING, 1, "null")
+#endif
 #else
 ZEND_BEGIN_ARG_INFO_EX(arginfo_brotli_compress, 0, 0, 1)
     ZEND_ARG_INFO(0, data)
     ZEND_ARG_INFO(0, quality)
     ZEND_ARG_INFO(0, mode)
+#if defined(USE_BROTLI_DICTIONARY)
+    ZEND_ARG_INFO(0, dict)
+#endif
 #endif
 ZEND_END_ARG_INFO()
 
@@ -49,10 +55,16 @@ ZEND_END_ARG_INFO()
 ZEND_BEGIN_ARG_WITH_RETURN_TYPE_MASK_EX(arginfo_brotli_uncompress, 0, 1, MAY_BE_STRING|MAY_BE_FALSE)
     ZEND_ARG_TYPE_INFO(0, data, IS_STRING, 0)
     ZEND_ARG_TYPE_INFO_WITH_DEFAULT_VALUE(0, length, IS_LONG, 0, "0")
+#if defined(USE_BROTLI_DICTIONARY)
+    ZEND_ARG_TYPE_INFO_WITH_DEFAULT_VALUE(0, dict, IS_STRING, 1, "null")
+#endif
 #else
 ZEND_BEGIN_ARG_INFO_EX(arginfo_brotli_uncompress, 0, 0, 1)
     ZEND_ARG_INFO(0, data)
     ZEND_ARG_INFO(0, length)
+#if defined(USE_BROTLI_DICTIONARY)
+    ZEND_ARG_INFO(0, dict)
+#endif
 #endif
 ZEND_END_ARG_INFO()
 
@@ -99,6 +111,11 @@ ZEND_BEGIN_ARG_INFO_EX(arginfo_brotli_uncompress_add, 0, 0, 2)
     ZEND_ARG_INFO(0, mode)
 #endif
 ZEND_END_ARG_INFO()
+
+#ifndef Z_PARAM_STRING_OR_NULL
+#define Z_PARAM_STRING_OR_NULL(dest, dest_len) \
+    Z_PARAM_STRING_EX(dest, dest_len, 1, 0)
+#endif
 
 #if defined(HAVE_APCU_SUPPORT)
 static int APC_SERIALIZER_NAME(brotli)(APC_SERIALIZER_ARGS);
@@ -1027,6 +1044,14 @@ ZEND_MINIT_FUNCTION(brotli)
     REGISTER_LONG_CONSTANT("BROTLI_FINISH", BROTLI_OPERATION_FINISH,
                            CONST_CS | CONST_PERSISTENT);
 
+#if defined(USE_BROTLI_DICTIONARY)
+    REGISTER_BOOL_CONSTANT("BROTLI_DICTIONARY_SUPPORT", 1,
+                           CONST_CS | CONST_PERSISTENT);
+#else
+    REGISTER_BOOL_CONSTANT("BROTLI_DICTIONARY_SUPPORT", 0,
+                           CONST_CS | CONST_PERSISTENT);
+#endif
+
     php_output_handler_alias_register(ZEND_STRL(PHP_BROTLI_OUTPUT_HANDLER),
                                       php_brotli_output_handler_init);
     php_output_handler_conflict_register(ZEND_STRL(PHP_BROTLI_OUTPUT_HANDLER),
@@ -1140,6 +1165,11 @@ ZEND_MINFO_FUNCTION(brotli)
              version >> 24, (version >> 12) & 0xfff, version & 0xfff);
     php_info_print_table_row(2, "Library Version", buffer);
 #endif
+#if defined(USE_BROTLI_DICTIONARY)
+    php_info_print_table_row(2, "Dictionary support", "enabled");
+#else
+    php_info_print_table_row(2, "Dictionary support", "disabled");
+#endif
 #if defined(HAVE_APCU_SUPPORT)
     php_info_print_table_row(2, "APCu serializer ABI", APC_SERIALIZER_ABI);
 #endif
@@ -1186,12 +1216,21 @@ static ZEND_FUNCTION(brotli_compress)
 
     zend_long quality = BROTLI_DEFAULT_QUALITY;
     zend_long mode =  BROTLI_MODE_GENERIC;
+#if defined(USE_BROTLI_DICTIONARY)
+    char *dict = NULL;
+    size_t dict_size = 0;
 
+    ZEND_PARSE_PARAMETERS_START(1, 4)
+#else
     ZEND_PARSE_PARAMETERS_START(1, 3)
+#endif
         Z_PARAM_STRING(in, in_size)
         Z_PARAM_OPTIONAL
         Z_PARAM_LONG(quality)
         Z_PARAM_LONG(mode)
+#if defined(USE_BROTLI_DICTIONARY)
+        Z_PARAM_STRING_OR_NULL(dict, dict_size)
+#endif
     ZEND_PARSE_PARAMETERS_END();
 
     if (mode != BROTLI_MODE_GENERIC &&
@@ -1212,8 +1251,28 @@ static ZEND_FUNCTION(brotli_compress)
         RETURN_FALSE;
     }
 
+#if defined(USE_BROTLI_DICTIONARY)
+    BrotliEncoderPreparedDictionary *dictionary = NULL;
+    if (dict && dict_size > 0) {
+        dictionary
+            = BrotliEncoderPrepareDictionary(BROTLI_SHARED_DICTIONARY_RAW,
+                                             dict_size, dict,
+                                             BROTLI_MAX_QUALITY,
+                                             NULL, NULL, NULL);
+        if (dictionary == NULL) {
+            php_error_docref(NULL, E_WARNING, "failed to prepare dictionary");
+            RETURN_FALSE;
+        }
+    }
+#endif
+
     BrotliEncoderState *state = BrotliEncoderCreateInstance(NULL, NULL, NULL);
     if (!state) {
+#if defined(USE_BROTLI_DICTIONARY)
+        if (dictionary) {
+            BrotliEncoderDestroyPreparedDictionary(dictionary);
+        }
+#endif
         php_error_docref(NULL, E_WARNING, "failed to prepare compress");
         RETURN_FALSE;
     }
@@ -1221,6 +1280,12 @@ static ZEND_FUNCTION(brotli_compress)
     BrotliEncoderSetParameter(state, BROTLI_PARAM_QUALITY, quality);
     BrotliEncoderSetParameter(state, BROTLI_PARAM_MODE, mode);
     BrotliEncoderSetParameter(state, BROTLI_PARAM_LGWIN, BROTLI_DEFAULT_WINDOW);
+
+#if defined(USE_BROTLI_DICTIONARY)
+    if (dictionary) {
+        BrotliEncoderAttachPreparedDictionary(state, dictionary);
+    }
+#endif
 
     uint8_t *buffer;
     size_t buffer_size;
@@ -1251,6 +1316,12 @@ static ZEND_FUNCTION(brotli_compress)
     }
 
     BrotliEncoderDestroyInstance(state);
+
+#if defined(USE_BROTLI_DICTIONARY)
+    if (dictionary) {
+        BrotliEncoderDestroyPreparedDictionary(dictionary);
+    }
+#endif
 
     RETVAL_STRINGL(out.c, out.len);
 
@@ -1414,11 +1485,20 @@ static ZEND_FUNCTION(brotli_uncompress)
     char *in;
     size_t in_size;
     smart_string out = {0};
+#if defined(USE_BROTLI_DICTIONARY)
+    char *dict = NULL;
+    size_t dict_size = 0;
 
+    ZEND_PARSE_PARAMETERS_START(1, 3)
+#else
     ZEND_PARSE_PARAMETERS_START(1, 2)
+#endif
         Z_PARAM_STRING(in, in_size)
         Z_PARAM_OPTIONAL
         Z_PARAM_LONG(max_size)
+#if defined(USE_BROTLI_DICTIONARY)
+        Z_PARAM_STRING_OR_NULL(dict, dict_size)
+#endif
     ZEND_PARSE_PARAMETERS_END();
 
     if (max_size && max_size < in_size) {
@@ -1433,6 +1513,13 @@ static ZEND_FUNCTION(brotli_uncompress)
     }
 
     BrotliDecoderSetParameter(state, BROTLI_DECODER_PARAM_LARGE_WINDOW, 1u);
+
+#if defined(USE_BROTLI_DICTIONARY)
+    if (dict && dict_size > 0) {
+        BrotliDecoderAttachDictionary(state, BROTLI_SHARED_DICTIONARY_RAW,
+                                      dict_size, dict);
+    }
+#endif
 
     size_t available_in = in_size;
     const uint8_t *next_in = (const uint8_t *)in;
