@@ -37,11 +37,13 @@ ZEND_BEGIN_ARG_WITH_RETURN_TYPE_MASK_EX(arginfo_brotli_compress, 0, 1, MAY_BE_ST
     ZEND_ARG_TYPE_INFO(0, data, IS_STRING, 0)
     ZEND_ARG_TYPE_INFO_WITH_DEFAULT_VALUE(0, level, IS_LONG, 0, "BROTLI_COMPRESS_LEVEL_DEFAULT")
     ZEND_ARG_TYPE_INFO_WITH_DEFAULT_VALUE(0, mode, IS_LONG, 0, "BROTLI_GENERIC")
+    ZEND_ARG_TYPE_INFO_WITH_DEFAULT_VALUE(0, dict, IS_STRING, 1, "null")
 #else
 ZEND_BEGIN_ARG_INFO_EX(arginfo_brotli_compress, 0, 0, 1)
     ZEND_ARG_INFO(0, data)
     ZEND_ARG_INFO(0, level)
     ZEND_ARG_INFO(0, mode)
+    ZEND_ARG_INFO(0, dict)
 #endif
 ZEND_END_ARG_INFO()
 
@@ -49,10 +51,14 @@ ZEND_END_ARG_INFO()
 ZEND_BEGIN_ARG_WITH_RETURN_TYPE_MASK_EX(arginfo_brotli_uncompress, 0, 1, MAY_BE_STRING|MAY_BE_FALSE)
     ZEND_ARG_TYPE_INFO(0, data, IS_STRING, 0)
     ZEND_ARG_TYPE_INFO_WITH_DEFAULT_VALUE(0, length, IS_LONG, 0, "0")
+    ZEND_ARG_TYPE_INFO_WITH_DEFAULT_VALUE(0, dict, IS_STRING, 1, "null")
 #else
 ZEND_BEGIN_ARG_INFO_EX(arginfo_brotli_uncompress, 0, 0, 1)
     ZEND_ARG_INFO(0, data)
     ZEND_ARG_INFO(0, length)
+#if defined(USE_BROTLI_DICTIONARY)
+    ZEND_ARG_INFO(0, dict)
+#endif
 #endif
 ZEND_END_ARG_INFO()
 
@@ -60,10 +66,14 @@ ZEND_END_ARG_INFO()
 ZEND_BEGIN_ARG_WITH_RETURN_OBJ_TYPE_MASK_EX(arginfo_brotli_compress_init, 0, 0, Brotli\\Compress\\Context, MAY_BE_FALSE)
     ZEND_ARG_TYPE_INFO_WITH_DEFAULT_VALUE(0, level, IS_LONG, 0, "BROTLI_COMPRESS_LEVEL_DEFAULT")
     ZEND_ARG_TYPE_INFO_WITH_DEFAULT_VALUE(0, mode, IS_LONG, 0, "BROTLI_GENERIC")
+    ZEND_ARG_TYPE_INFO_WITH_DEFAULT_VALUE(0, dict, IS_STRING, 1, "null")
 #else
 ZEND_BEGIN_ARG_INFO_EX(arginfo_brotli_compress_init, 0, 0, 0)
     ZEND_ARG_INFO(0, level)
     ZEND_ARG_INFO(0, mode)
+#if defined(USE_BROTLI_DICTIONARY)
+    ZEND_ARG_INFO(0, dict)
+#endif
 #endif
 ZEND_END_ARG_INFO()
 
@@ -82,8 +92,10 @@ ZEND_END_ARG_INFO()
 
 #if PHP_VERSION_ID >= 80000
 ZEND_BEGIN_ARG_WITH_RETURN_OBJ_TYPE_MASK_EX(arginfo_brotli_uncompress_init, 0, 0, Brotli\\UnCompress\\Context, MAY_BE_FALSE)
+    ZEND_ARG_TYPE_INFO_WITH_DEFAULT_VALUE(0, dict, IS_STRING, 1, "null")
 #else
 ZEND_BEGIN_ARG_INFO_EX(arginfo_brotli_uncompress_init, 0, 0, 0)
+    ZEND_ARG_INFO(0, dict)
 #endif
 ZEND_END_ARG_INFO()
 
@@ -99,6 +111,10 @@ ZEND_BEGIN_ARG_INFO_EX(arginfo_brotli_uncompress_add, 0, 0, 2)
     ZEND_ARG_INFO(0, mode)
 #endif
 ZEND_END_ARG_INFO()
+
+#ifndef Z_PARAM_STR_OR_NULL
+#define Z_PARAM_STR_OR_NULL(dest) Z_PARAM_STR_EX(dest, 1, 0)
+#endif
 
 #if defined(HAVE_APCU_SUPPORT)
 static int APC_SERIALIZER_NAME(brotli)(APC_SERIALIZER_ARGS);
@@ -132,6 +148,9 @@ static const size_t PHP_BROTLI_BUFFER_SIZE = 1 << 19;
 struct _php_brotli_context {
     BrotliEncoderState *encoder;
     BrotliDecoderState *decoder;
+#if defined(USE_BROTLI_DICTIONARY)
+    BrotliEncoderPreparedDictionary *dictionary;
+#endif
     size_t available_in;
     const uint8_t *next_in;
     size_t available_out;
@@ -144,6 +163,9 @@ static void php_brotli_context_init(php_brotli_context *ctx)
 {
     ctx->encoder = NULL;
     ctx->decoder = NULL;
+#if defined(USE_BROTLI_DICTIONARY)
+    ctx->dictionary = NULL;
+#endif
     ctx->available_in = 0;
     ctx->next_in = NULL;
     ctx->available_out = 0;
@@ -152,8 +174,11 @@ static void php_brotli_context_init(php_brotli_context *ctx)
 }
 
 static int php_brotli_context_create_encoder_ex(php_brotli_context *ctx,
-                                                long level, int lgwin,
-                                                long mode, int fail)
+                                                long level,
+                                                int lgwin,
+                                                long mode,
+                                                zend_string *dict,
+                                                int fail)
 {
     ctx->encoder = BrotliEncoderCreateInstance(NULL, NULL, NULL);
     if (!ctx->encoder) {
@@ -204,13 +229,37 @@ static int php_brotli_context_create_encoder_ex(php_brotli_context *ctx,
         return FAILURE;
     }
 
+    if (dict) {
+#if defined(USE_BROTLI_DICTIONARY)
+        ctx->dictionary
+            = BrotliEncoderPrepareDictionary(BROTLI_SHARED_DICTIONARY_RAW,
+                                             ZSTR_LEN(dict), ZSTR_VAL(dict),
+                                             BROTLI_MAX_QUALITY,
+                                             NULL, NULL, NULL);
+        if (ctx->dictionary == NULL
+            || !BrotliEncoderAttachPreparedDictionary(ctx->encoder,
+                                                      ctx->dictionary)) {
+            php_error_docref(NULL, E_WARNING,
+                             "%sfailed to set compression dictionary",
+                             (fail ? "" : "brotli: "));
+            return FAILURE;
+        }
+#else
+        php_error_docref(NULL, E_WARNING,
+                         "%sfailed to not supported compression dictionary",
+                         (fail ? "" : "brotli: "));
+        return FAILURE;
+#endif
+    }
+
     return SUCCESS;
 }
 
 #define php_brotli_context_create_encoder(ctx, level, lgwin, mode) \
-    php_brotli_context_create_encoder_ex(ctx, level, lgwin, mode, 0)
+    php_brotli_context_create_encoder_ex(ctx, level, lgwin, mode, NULL, 0)
 
 static int php_brotli_context_create_decoder_ex(php_brotli_context *ctx,
+                                                zend_string *dict,
                                                 int fail)
 {
     ctx->decoder = BrotliDecoderCreateInstance(NULL, NULL, NULL);
@@ -229,11 +278,29 @@ static int php_brotli_context_create_decoder_ex(php_brotli_context *ctx,
         return FAILURE;
     }
 
+    if (dict) {
+#if defined(USE_BROTLI_DICTIONARY)
+        if (!BrotliDecoderAttachDictionary(ctx->decoder,
+                                           BROTLI_SHARED_DICTIONARY_RAW,
+                                           ZSTR_LEN(dict), ZSTR_VAL(dict))) {
+            php_error_docref(NULL, E_WARNING,
+                             "%sfailed to set uncompression dictionary",
+                             (fail ? "" : "brotli: "));
+            return FAILURE;
+        }
+#else
+        php_error_docref(NULL, E_WARNING,
+                         "%sfailed to not supported uncompression dictionary",
+                         (fail ? "" : "brotli: "));
+        return FAILURE;
+#endif
+    }
+
     return SUCCESS;
 }
 
 #define php_brotli_context_create_decoder(ctx) \
-    php_brotli_context_create_decoder_ex(ctx, 0)
+    php_brotli_context_create_decoder_ex(ctx, NULL, 0)
 
 static void php_brotli_context_close(php_brotli_context *ctx)
 {
@@ -245,6 +312,12 @@ static void php_brotli_context_close(php_brotli_context *ctx)
         BrotliDecoderDestroyInstance(ctx->decoder);
         ctx->decoder = NULL;
     }
+#if defined(USE_BROTLI_DICTIONARY)
+    if (ctx->dictionary) {
+        BrotliEncoderDestroyPreparedDictionary(ctx->dictionary);
+        ctx->dictionary = NULL;
+    }
+#endif
 
     if (ctx->output) {
         efree(ctx->output);
@@ -1063,6 +1136,14 @@ ZEND_MINIT_FUNCTION(brotli)
     REGISTER_LONG_CONSTANT("BROTLI_FINISH", BROTLI_OPERATION_FINISH,
                            CONST_CS | CONST_PERSISTENT);
 
+#if defined(USE_BROTLI_DICTIONARY)
+    REGISTER_BOOL_CONSTANT("BROTLI_DICTIONARY_SUPPORT", 1,
+                           CONST_CS | CONST_PERSISTENT);
+#else
+    REGISTER_BOOL_CONSTANT("BROTLI_DICTIONARY_SUPPORT", 0,
+                           CONST_CS | CONST_PERSISTENT);
+#endif
+
     php_output_handler_alias_register(ZEND_STRL(PHP_BROTLI_OUTPUT_HANDLER),
                                       php_brotli_output_handler_init);
     php_output_handler_conflict_register(ZEND_STRL(PHP_BROTLI_OUTPUT_HANDLER),
@@ -1176,6 +1257,11 @@ ZEND_MINFO_FUNCTION(brotli)
              version >> 24, (version >> 12) & 0xfff, version & 0xfff);
     php_info_print_table_row(2, "Library Version", buffer);
 #endif
+#if defined(USE_BROTLI_DICTIONARY)
+    php_info_print_table_row(2, "Dictionary support", "enabled");
+#else
+    php_info_print_table_row(2, "Dictionary support", "disabled");
+#endif
 #if defined(HAVE_APCU_SUPPORT)
     php_info_print_table_row(2, "APCu serializer ABI", APC_SERIALIZER_ABI);
 #endif
@@ -1222,18 +1308,20 @@ static ZEND_FUNCTION(brotli_compress)
 
     zend_long level = BROTLI_DEFAULT_QUALITY;
     zend_long mode =  BROTLI_MODE_GENERIC;
+    zend_string *dict = NULL;
 
-    ZEND_PARSE_PARAMETERS_START(1, 3)
+    ZEND_PARSE_PARAMETERS_START(1, 4)
         Z_PARAM_STRING(in, in_size)
         Z_PARAM_OPTIONAL
         Z_PARAM_LONG(level)
         Z_PARAM_LONG(mode)
+        Z_PARAM_STR_OR_NULL(dict)
     ZEND_PARSE_PARAMETERS_END();
 
     php_brotli_context ctx;
     php_brotli_context_init(&ctx);
     if (php_brotli_context_create_encoder_ex(&ctx, level, 0, mode,
-                                             1) != SUCCESS) {
+                                             dict, 1) != SUCCESS) {
         php_brotli_context_close(&ctx);
         RETURN_FALSE;
     }
@@ -1278,17 +1366,19 @@ static ZEND_FUNCTION(brotli_compress_init)
 {
     zend_long level = BROTLI_DEFAULT_QUALITY;
     zend_long mode =  BROTLI_MODE_GENERIC;
+    zend_string *dict = NULL;
 
-    ZEND_PARSE_PARAMETERS_START(0, 2)
+    ZEND_PARSE_PARAMETERS_START(0, 3)
         Z_PARAM_OPTIONAL
         Z_PARAM_LONG(level)
         Z_PARAM_LONG(mode)
+        Z_PARAM_STR_OR_NULL(dict)
     ZEND_PARSE_PARAMETERS_END();
 
     PHP_BROTLI_CONTEXT_OBJ_INIT_OF_CLASS(php_brotli_compress_context_ce);
 
     if (php_brotli_context_create_encoder_ex(ctx, level, 0, mode,
-                                             1) != SUCCESS) {
+                                             dict, 1) != SUCCESS) {
         zval_ptr_dtor(return_value);
         RETURN_FALSE;
     }
@@ -1410,11 +1500,13 @@ static ZEND_FUNCTION(brotli_uncompress)
     char *in;
     size_t in_size;
     smart_string out = {0};
+    zend_string *dict = NULL;
 
-    ZEND_PARSE_PARAMETERS_START(1, 2)
+    ZEND_PARSE_PARAMETERS_START(1, 3)
         Z_PARAM_STRING(in, in_size)
         Z_PARAM_OPTIONAL
         Z_PARAM_LONG(max_size)
+        Z_PARAM_STR_OR_NULL(dict)
     ZEND_PARSE_PARAMETERS_END();
 
     if (max_size && max_size < in_size) {
@@ -1423,7 +1515,7 @@ static ZEND_FUNCTION(brotli_uncompress)
 
     php_brotli_context ctx;
     php_brotli_context_init(&ctx);
-    if (php_brotli_context_create_decoder_ex(&ctx, 1) != SUCCESS) {
+    if (php_brotli_context_create_decoder_ex(&ctx, dict, 1) != SUCCESS) {
         php_brotli_context_close(&ctx);
         RETURN_FALSE;
     }
@@ -1463,13 +1555,16 @@ static ZEND_FUNCTION(brotli_uncompress)
 
 static ZEND_FUNCTION(brotli_uncompress_init)
 {
-    if (zend_parse_parameters_none() == FAILURE) {
-        RETURN_FALSE;
-    }
+    zend_string *dict = NULL;
+
+    ZEND_PARSE_PARAMETERS_START(0, 1)
+        Z_PARAM_OPTIONAL
+        Z_PARAM_STR_OR_NULL(dict)
+    ZEND_PARSE_PARAMETERS_END();
 
     PHP_BROTLI_CONTEXT_OBJ_INIT_OF_CLASS(php_brotli_uncompress_context_ce);
 
-    if (php_brotli_context_create_decoder_ex(ctx, 1) != SUCCESS) {
+    if (php_brotli_context_create_decoder_ex(ctx, dict, 1) != SUCCESS) {
         zval_ptr_dtor(return_value);
         RETURN_FALSE;
     }
