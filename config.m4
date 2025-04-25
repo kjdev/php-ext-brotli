@@ -63,6 +63,14 @@ if test "$PHP_BROTLI" != "no"; then
     PHP_EVAL_INCLINE($LIBBROTLIDEC_CFLAGS)
     PHP_EVAL_LIBLINE($LIBBROTLIDEC_LIBS, BROTLI_SHARED_LIBADD)
     AC_DEFINE_UNQUOTED(BROTLI_LIB_VERSION, "$LIBBROTLIDEC_VERSION", [system library version])
+
+    AC_MSG_CHECKING(for brotli dictionary)
+    if $PKG_CONFIG libbrotlidec --atleast-version 1.1.0; then
+      AC_MSG_RESULT([enable])
+      AC_DEFINE(USE_BROTLI_DICTIONARY, 1, [use dictionary support])
+    else
+      AC_MSG_RESULT([disable])
+    fi
   else
     AC_MSG_CHECKING(for brotli)
     AC_MSG_RESULT(use bundled copy)
@@ -106,6 +114,7 @@ if test "$PHP_BROTLI" != "no"; then
     "
 
     AC_DEFINE(USE_BROTLI_BUNDLED, 1, [use bundled])
+    AC_DEFINE(USE_BROTLI_DICTIONARY, 1, [use dictionary support])
   fi
 
   PHP_SUBST(BROTLI_SHARED_LIBADD)

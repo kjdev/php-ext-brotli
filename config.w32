@@ -6,6 +6,10 @@ if (PHP_BROTLI != "no") {
       CHECK_LIB("brotlienc.lib;libbrotlienc.lib", "brotli", PHP_BROTLI) &&
       CHECK_HEADER_ADD_INCLUDE("brotli/encode.h", "CFLAGS_BROTLI", PHP_BROTLI)) {
     EXTENSION("brotli", "brotli.c", PHP_BROTLI_SHARED, "/DZEND_ENABLE_STATIC_TSRMLS_CACHE=1");
+    if (CHECK_HEADER_ADD_INCLUDE("brotli/shared_dictionary.h", "CFLAGS_BROTLI", PHP_BROTLI)) {
+      // library version >= 1.1.0
+      AC_DEFINE('USE_BROTLI_DICTIONARY', 1, 'use dictionary support');
+    }
   } else {
     EXTENSION("brotli", "brotli.c", PHP_BROTLI_SHARED, "/DZEND_ENABLE_STATIC_TSRMLS_CACHE=1");
     ADD_SOURCES("brotli/c/common", "constants.c context.c dictionary.c platform.c shared_dictionary.c transform.c", "brotli");
@@ -15,6 +19,7 @@ if (PHP_BROTLI != "no") {
     ADD_FLAG("CFLAGS_BROTLI", " /I" + configure_module_dirname + " /I" + configure_module_dirname + "/brotli/c/include");
 
     AC_DEFINE('USE_BROTLI_BUNDLED', 1, 'use bundled');
+    AC_DEFINE('USE_BROTLI_DICTIONARY', 1, 'use dictionary support');
   }
   AC_DEFINE('BROTLI_MIN_VERSION', '0.6', 'libbrotlienc minimum version');
   PHP_INSTALL_HEADERS("ext/brotli/", "php_brotli.h");
