@@ -1160,11 +1160,19 @@ static ZEND_FUNCTION(brotli_compress)
     if (mode != BROTLI_MODE_GENERIC &&
         mode != BROTLI_MODE_TEXT &&
         mode != BROTLI_MODE_FONT) {
-        mode = BROTLI_MODE_GENERIC;
+        php_error_docref(NULL, E_WARNING,
+                         "mode (%ld) must be BROTLI_GENERIC(%d)"
+                         "|BROTLI_TEXT(%d)|BROTLI_FONT(%d)",
+                         (long)mode, BROTLI_MODE_GENERIC,
+                         BROTLI_MODE_TEXT, BROTLI_MODE_FONT);
+        RETURN_FALSE;
     }
 
     if (quality < BROTLI_MIN_QUALITY || quality > BROTLI_MAX_QUALITY) {
-        quality = BROTLI_DEFAULT_QUALITY;
+        php_error_docref(NULL, E_WARNING,
+                         "quality (%ld) must be within %d..%d",
+                         (long)quality, BROTLI_MIN_QUALITY, BROTLI_MAX_QUALITY);
+        RETURN_FALSE;
     }
 
     BrotliEncoderState *state = BrotliEncoderCreateInstance(NULL, NULL, NULL);
@@ -1224,6 +1232,24 @@ static ZEND_FUNCTION(brotli_compress_init)
         Z_PARAM_LONG(mode)
     ZEND_PARSE_PARAMETERS_END();
 
+    if (mode != BROTLI_MODE_GENERIC &&
+        mode != BROTLI_MODE_TEXT &&
+        mode != BROTLI_MODE_FONT) {
+        php_error_docref(NULL, E_WARNING,
+                         "mode (%ld) must be BROTLI_GENERIC(%d)"
+                         "|BROTLI_TEXT(%d)|BROTLI_FONT(%d)",
+                         (long)mode, BROTLI_MODE_GENERIC,
+                         BROTLI_MODE_TEXT, BROTLI_MODE_FONT);
+        RETURN_FALSE;
+    }
+
+    if (quality < BROTLI_MIN_QUALITY || quality > BROTLI_MAX_QUALITY) {
+        php_error_docref(NULL, E_WARNING,
+                         "quality (%ld) must be within %d..%d",
+                         (long)quality, BROTLI_MIN_QUALITY, BROTLI_MAX_QUALITY);
+        RETURN_FALSE;
+    }
+
     PHP_BROTLI_CONTEXT_OBJ_INIT_OF_CLASS(php_brotli_compress_context_ce);
 
     if (php_brotli_encoder_create(&ctx->state.encoder,
@@ -1260,6 +1286,17 @@ static ZEND_FUNCTION(brotli_compress_add)
         Z_PARAM_OPTIONAL
         Z_PARAM_LONG(mode)
     ZEND_PARSE_PARAMETERS_END();
+
+    if (mode != BROTLI_OPERATION_PROCESS &&
+        mode != BROTLI_OPERATION_FLUSH &&
+        mode != BROTLI_OPERATION_FINISH) {
+        php_error_docref(NULL, E_WARNING,
+                         "mode (%ld) must be BROTLI_PROCESS(%d)"
+                         "|BROTLI_FLUSH(%d)|BROTLI_FINISH(%d)",
+                         (long)mode, BROTLI_OPERATION_PROCESS,
+                         BROTLI_OPERATION_FLUSH, BROTLI_OPERATION_FINISH);
+        RETURN_FALSE;
+    }
 
 #if PHP_VERSION_ID >= 80000
     ctx = php_brotli_context_from_obj(obj);
@@ -1432,6 +1469,17 @@ static ZEND_FUNCTION(brotli_uncompress_add)
         Z_PARAM_OPTIONAL
         Z_PARAM_LONG(mode)
     ZEND_PARSE_PARAMETERS_END();
+
+    if (mode != BROTLI_OPERATION_PROCESS &&
+        mode != BROTLI_OPERATION_FLUSH &&
+        mode != BROTLI_OPERATION_FINISH) {
+        php_error_docref(NULL, E_WARNING,
+                         "mode (%ld) must be BROTLI_PROCESS(%d)"
+                         "|BROTLI_FLUSH(%d)|BROTLI_FINISH(%d)",
+                         (long)mode, BROTLI_OPERATION_PROCESS,
+                         BROTLI_OPERATION_FLUSH, BROTLI_OPERATION_FINISH);
+        RETURN_FALSE;
+    }
 
 #if PHP_VERSION_ID >= 80000
     ctx = php_brotli_context_from_obj(obj);
