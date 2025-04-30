@@ -1157,9 +1157,6 @@ static ZEND_FUNCTION(brotli_compress)
         Z_PARAM_LONG(mode)
     ZEND_PARSE_PARAMETERS_END();
 
-    size_t out_size = BrotliEncoderMaxCompressedSize(in_size);
-    char *out = (char *)emalloc(out_size);
-
     if (mode != BROTLI_MODE_GENERIC &&
         mode != BROTLI_MODE_TEXT &&
         mode != BROTLI_MODE_FONT) {
@@ -1170,19 +1167,50 @@ static ZEND_FUNCTION(brotli_compress)
         quality = BROTLI_DEFAULT_QUALITY;
     }
 
-    int lgwin = BROTLI_DEFAULT_WINDOW;
-
-    if (!BrotliEncoderCompress((int)quality, lgwin, (BrotliEncoderMode)mode,
-                               in_size, (const uint8_t*)in,
-                               &out_size, (uint8_t*)out)) {
-        php_error_docref(NULL, E_WARNING,
-                         "Brotli compress failed");
-        efree(out);
+    BrotliEncoderState *state = BrotliEncoderCreateInstance(NULL, NULL, NULL);
+    if (!state) {
+        php_error_docref(NULL, E_WARNING, "failed to prepare compress");
         RETURN_FALSE;
     }
 
-    RETVAL_STRINGL(out, out_size);
-    efree(out);
+    BrotliEncoderSetParameter(state, BROTLI_PARAM_QUALITY, quality);
+    BrotliEncoderSetParameter(state, BROTLI_PARAM_MODE, mode);
+    BrotliEncoderSetParameter(state, BROTLI_PARAM_LGWIN, BROTLI_DEFAULT_WINDOW);
+
+    uint8_t *buffer;
+    size_t buffer_size;
+    buffer_size = BrotliEncoderMaxCompressedSize(in_size);
+    buffer_size = (buffer_size < 64) ? 64 : buffer_size;
+    buffer = (uint8_t *)emalloc(buffer_size);
+
+    const uint8_t *next_in = (const uint8_t *)in;
+    size_t available_in = in_size;
+    smart_string out = {0};
+    while (!BrotliEncoderIsFinished(state)) {
+        size_t available_out = buffer_size;
+        uint8_t *next_out = buffer;
+        if (BrotliEncoderCompressStream(state, BROTLI_OPERATION_FINISH,
+                                        &available_in, &next_in,
+                                        &available_out, &next_out,
+                                        0)) {
+            size_t used_out = (size_t)(next_out - buffer);
+            if (used_out) {
+                smart_string_appendl(&out, buffer, used_out);
+            }
+        } else {
+            efree(buffer);
+            smart_string_free(&out);
+            php_error_docref(NULL, E_WARNING, "failed to compress");
+            RETURN_FALSE;
+        }
+    }
+
+    BrotliEncoderDestroyInstance(state);
+
+    RETVAL_STRINGL(out.c, out.len);
+
+    efree(buffer);
+    smart_string_free(&out);
 }
 
 static ZEND_FUNCTION(brotli_compress_init)
