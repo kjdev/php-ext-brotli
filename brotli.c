@@ -1369,6 +1369,8 @@ static ZEND_FUNCTION(brotli_uncompress)
         RETURN_FALSE;
     }
 
+    BrotliDecoderSetParameter(state, BROTLI_DECODER_PARAM_LARGE_WINDOW, 1u);
+
     size_t available_in = in_size;
     const uint8_t *next_in = (const uint8_t *)in;
     size_t buffer_size = PHP_BROTLI_BUFFER_SIZE;
