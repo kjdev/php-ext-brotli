@@ -28,20 +28,7 @@ extern zend_module_entry brotli_module_entry;
 #    include "TSRM.h"
 #endif
 
-typedef struct _php_brotli_state_context {
-    BrotliEncoderState *encoder;
-    BrotliDecoderState *decoder;
-} php_brotli_state_context;
-
-typedef struct _php_brotli_context {
-    php_brotli_state_context state;
-    size_t available_in;
-    const uint8_t *next_in;
-    size_t available_out;
-    uint8_t *next_out;
-    uint8_t *output;
-    zend_object std;
-} php_brotli_context;
+typedef struct _php_brotli_context php_brotli_context;
 
 ZEND_BEGIN_MODULE_GLOBALS(brotli)
   zend_long output_compression;
