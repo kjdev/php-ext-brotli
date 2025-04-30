@@ -32,35 +32,72 @@ static ZEND_FUNCTION(brotli_compress_add);
 static ZEND_FUNCTION(brotli_uncompress_init);
 static ZEND_FUNCTION(brotli_uncompress_add);
 
+#if PHP_VERSION_ID >= 80000
+ZEND_BEGIN_ARG_WITH_RETURN_TYPE_MASK_EX(arginfo_brotli_compress, 0, 1, MAY_BE_STRING|MAY_BE_FALSE)
+    ZEND_ARG_TYPE_INFO(0, data, IS_STRING, 0)
+    ZEND_ARG_TYPE_INFO_WITH_DEFAULT_VALUE(0, level, IS_LONG, BROTLI_DEFAULT_QUALITY, "BROTLI_COMPRESS_LEVEL_DEFAULT")
+    ZEND_ARG_TYPE_INFO_WITH_DEFAULT_VALUE(0, mode, IS_LONG, BROTLI_MODE_GENERIC, "BROTLI_GENERIC")
+#else
 ZEND_BEGIN_ARG_INFO_EX(arginfo_brotli_compress, 0, 0, 1)
     ZEND_ARG_INFO(0, data)
     ZEND_ARG_INFO(0, level)
     ZEND_ARG_INFO(0, mode)
+#endif
 ZEND_END_ARG_INFO()
 
+#if PHP_VERSION_ID >= 80000
+ZEND_BEGIN_ARG_WITH_RETURN_TYPE_MASK_EX(arginfo_brotli_uncompress, 0, 1, MAY_BE_STRING|MAY_BE_FALSE)
+    ZEND_ARG_TYPE_INFO(0, data, IS_STRING, 0)
+    ZEND_ARG_TYPE_INFO_WITH_DEFAULT_VALUE(0, length, IS_LONG, 0, "0")
+#else
 ZEND_BEGIN_ARG_INFO_EX(arginfo_brotli_uncompress, 0, 0, 1)
     ZEND_ARG_INFO(0, data)
     ZEND_ARG_INFO(0, length)
+#endif
 ZEND_END_ARG_INFO()
 
+#if PHP_VERSION_ID >= 80000
+ZEND_BEGIN_ARG_WITH_RETURN_OBJ_TYPE_MASK_EX(arginfo_brotli_compress_init, 0, 0, Brotli\\Compress\\Context, MAY_BE_FALSE)
+    ZEND_ARG_TYPE_INFO_WITH_DEFAULT_VALUE(0, level, IS_LONG, BROTLI_DEFAULT_QUALITY, "BROTLI_COMPRESS_LEVEL_DEFAULT")
+    ZEND_ARG_TYPE_INFO_WITH_DEFAULT_VALUE(0, mode, IS_LONG, BROTLI_MODE_GENERIC, "BROTLI_GENERIC")
+#else
 ZEND_BEGIN_ARG_INFO_EX(arginfo_brotli_compress_init, 0, 0, 0)
     ZEND_ARG_INFO(0, level)
     ZEND_ARG_INFO(0, mode)
+#endif
 ZEND_END_ARG_INFO()
 
+#if PHP_VERSION_ID >= 80000
+ZEND_BEGIN_ARG_WITH_RETURN_TYPE_MASK_EX(arginfo_brotli_compress_add, 0, 2, MAY_BE_STRING|MAY_BE_FALSE)
+    ZEND_ARG_OBJ_INFO(0, context, Brotli\\Compress\\Context, 0)
+    ZEND_ARG_TYPE_INFO(0, data, IS_STRING, 0)
+    ZEND_ARG_TYPE_INFO_WITH_DEFAULT_VALUE(0, mode, IS_LONG, BROTLI_MODE_GENERIC, "BROTLI_FLUSH")
+#else
 ZEND_BEGIN_ARG_INFO_EX(arginfo_brotli_compress_add, 0, 0, 2)
     ZEND_ARG_INFO(0, context)
     ZEND_ARG_INFO(0, data)
     ZEND_ARG_INFO(0, mode)
+#endif
 ZEND_END_ARG_INFO()
 
+#if PHP_VERSION_ID >= 80000
+ZEND_BEGIN_ARG_WITH_RETURN_OBJ_TYPE_MASK_EX(arginfo_brotli_uncompress_init, 0, 0, Brotli\\UnCompress\\Context, MAY_BE_FALSE)
+#else
 ZEND_BEGIN_ARG_INFO_EX(arginfo_brotli_uncompress_init, 0, 0, 0)
+#endif
 ZEND_END_ARG_INFO()
 
+#if PHP_VERSION_ID >= 80000
+ZEND_BEGIN_ARG_WITH_RETURN_TYPE_MASK_EX(arginfo_brotli_uncompress_add, 0, 2, MAY_BE_STRING|MAY_BE_FALSE)
+    ZEND_ARG_OBJ_INFO(0, context, Brotli\\UnCompress\\Context, 0)
+    ZEND_ARG_TYPE_INFO(0, data, IS_STRING, 0)
+    ZEND_ARG_TYPE_INFO_WITH_DEFAULT_VALUE(0, mode, IS_LONG, BROTLI_MODE_GENERIC, "BROTLI_FLUSH")
+#else
 ZEND_BEGIN_ARG_INFO_EX(arginfo_brotli_uncompress_add, 0, 0, 2)
     ZEND_ARG_INFO(0, context)
     ZEND_ARG_INFO(0, data)
     ZEND_ARG_INFO(0, mode)
+#endif
 ZEND_END_ARG_INFO()
 
 #if defined(HAVE_APCU_SUPPORT)
