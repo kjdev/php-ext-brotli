@@ -104,6 +104,8 @@ if test "$PHP_BROTLI" != "no"; then
       brotli/c/dec/huffman.c
       brotli/c/dec/state.c
     "
+
+    AC_DEFINE(USE_BROTLI_BUNDLED, 1, [use bundled])
   fi
 
   PHP_SUBST(BROTLI_SHARED_LIBADD)
