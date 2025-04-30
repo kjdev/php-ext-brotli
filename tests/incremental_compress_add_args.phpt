@@ -19,6 +19,10 @@ function test($quality = 0, $mode = 0) {
     $uncompressed = $compressed = '';
 
     $resource = brotli_compress_init($quality, $mode);
+    if ($resource === false) {
+      echo "ERROR\n";
+      return;
+    }
     foreach (range('a', 'z') as $c) {
       $uncompressed .= $c;
       $compressed .= brotli_compress_add($resource, $c, $modeType);
@@ -53,18 +57,12 @@ OK
 OK
 quality=20, mode=0
 
-Warning: brotli_compress_init(): brotli: compression level (20) must be within 0..11 in %s on line %d
-OK
-
-Warning: brotli_compress_init(): brotli: compression level (20) must be within 0..11 in %s on line %d
-OK
+Warning: brotli_compress_init(): quality (20) must be within 0..11 in %s on line %d
+ERROR
 quality=-1, mode=0
 
-Warning: brotli_compress_init(): brotli: compression level (-1) must be within 0..11 in %s on line %d
-OK
-
-Warning: brotli_compress_init(): brotli: compression level (-1) must be within 0..11 in %s on line %d
-OK
+Warning: brotli_compress_init(): quality (-1) must be within 0..11 in %s on line %d
+ERROR
 quality=0, mode=0
 OK
 OK
@@ -76,16 +74,10 @@ OK
 OK
 quality=0, mode=3
 
-Warning: brotli_compress_init(): brotli: compression mode (3) must be 0, 1, 2 in %s on line %d
-OK
-
-Warning: brotli_compress_init(): brotli: compression mode (3) must be 0, 1, 2 in %s on line %d
-OK
+Warning: brotli_compress_init(): mode (3) must be BROTLI_GENERIC(0)|BROTLI_TEXT(1)|BROTLI_FONT(2) in %s on line %d
+ERROR
 quality=0, mode=-1
 
-Warning: brotli_compress_init(): brotli: compression mode (-1) must be 0, 1, 2 in %s on line %d
-OK
-
-Warning: brotli_compress_init(): brotli: compression mode (-1) must be 0, 1, 2 in %s on line %d
-OK
+Warning: brotli_compress_init(): mode (-1) must be BROTLI_GENERIC(0)|BROTLI_TEXT(1)|BROTLI_FONT(2) in %s on line %d
+ERROR
 ===DONE===
