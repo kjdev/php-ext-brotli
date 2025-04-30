@@ -13,6 +13,8 @@ if (PHP_BROTLI != "no") {
     ADD_SOURCES("brotli/c/dec", "bit_reader.c decode.c huffman.c state.c", "brotli");
 
     ADD_FLAG("CFLAGS_BROTLI", " /I" + configure_module_dirname + " /I" + configure_module_dirname + "/brotli/c/include");
+
+    AC_DEFINE('USE_BROTLI_BUNDLED', 1, 'use bundled');
   }
   AC_DEFINE('BROTLI_MIN_VERSION', '0.6', 'libbrotlienc minimum version');
   PHP_INSTALL_HEADERS("ext/brotli/", "php_brotli.h");

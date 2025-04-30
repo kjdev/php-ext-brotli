@@ -13,7 +13,13 @@
 #include <zend_smart_str.h>
 #endif
 #include <Zend/zend_interfaces.h>
+#if defined(USE_BROTLI_BUNDLED)
+# pragma GCC visibility push(hidden)
+#endif
 #include "php_brotli.h"
+#if defined(USE_BROTLI_BUNDLED)
+# pragma GCC visibility pop
+#endif
 
 # pragma GCC diagnostic ignored "-Wpointer-sign"
 
