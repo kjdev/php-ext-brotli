@@ -478,14 +478,8 @@ static void php_brotli_init_globals(zend_brotli_globals *brotli_globals)
 }
 
 typedef struct _php_brotli_stream_data {
-    BrotliEncoderState *cctx;
-    BrotliDecoderState *dctx;
+    php_brotli_context ctx;
     BrotliDecoderResult result;
-    size_t available_in;
-    const uint8_t *next_in;
-    size_t available_out;
-    uint8_t *next_out;
-    uint8_t *output;
     php_stream *stream;
 } php_brotli_stream_data;
 
@@ -510,13 +504,8 @@ static int php_brotli_decompress_close(php_stream *stream,
         }
     }
 
-    if (self->dctx) {
-        BrotliDecoderDestroyInstance(self->dctx);
-        self->dctx = NULL;
-    }
-    if (self->output) {
-        efree(self->output);
-    }
+    php_brotli_context_close(&self->ctx);
+
     efree(self);
 
     stream->abstract = NULL;
@@ -553,26 +542,26 @@ static ssize_t php_brotli_decompress_read(php_stream *stream,
             return -1;
 #endif
         }
-        self->available_in = php_stream_read(self->stream, input,
-                                             PHP_BROTLI_BUFFER_SIZE );
-        self->next_in = input;
+        self->ctx.available_in = php_stream_read(self->stream, input,
+                                                 PHP_BROTLI_BUFFER_SIZE );
+        self->ctx.next_in = input;
     }
 
     /* output */
     uint8_t *output = (uint8_t *)emalloc(count);
-    self->available_out = count;
-    self->next_out = output;
+    self->ctx.available_out = count;
+    self->ctx.next_out = output;
 
     while (1) {
-        self->result = BrotliDecoderDecompressStream(self->dctx,
-                                                     &self->available_in,
-                                                     &self->next_in,
-                                                     &self->available_out,
-                                                     &self->next_out,
+        self->result = BrotliDecoderDecompressStream(self->ctx.decoder,
+                                                     &self->ctx.available_in,
+                                                     &self->ctx.next_in,
+                                                     &self->ctx.available_out,
+                                                     &self->ctx.next_out,
                                                      0);
         if (self->result == BROTLI_DECODER_RESULT_NEEDS_MORE_OUTPUT
             || self->result == BROTLI_DECODER_RESULT_SUCCESS) {
-            size_t out_size = (size_t)(self->next_out - output);
+            size_t out_size = (size_t)(self->ctx.next_out - output);
             if (out_size) {
                 memcpy(buf, output, out_size);
                 ret += out_size;
@@ -584,8 +573,9 @@ static ssize_t php_brotli_decompress_read(php_stream *stream,
                 /* corrupt input */
                 break;
             }
-            self->available_in = php_stream_read(self->stream, input, count);
-            self->next_in = input;
+            self->ctx.available_in = php_stream_read(self->stream,
+                                                     input, count);
+            self->ctx.next_in = input;
         } else {
             /* decoder error */
             break;
@@ -616,10 +606,10 @@ static int php_brotli_compress_close(php_stream *stream,
 
     uint8_t *output = (uint8_t *)emalloc(PHP_BROTLI_BUFFER_SIZE);
 
-    while (!BrotliEncoderIsFinished(self->cctx)) {
+    while (!BrotliEncoderIsFinished(self->ctx.encoder)) {
         uint8_t *next_out = output;
         size_t available_out = PHP_BROTLI_BUFFER_SIZE;
-        if (BrotliEncoderCompressStream(self->cctx,
+        if (BrotliEncoderCompressStream(self->ctx.encoder,
                                         BROTLI_OPERATION_FINISH,
                                         &available_in,
                                         &next_in,
@@ -645,13 +635,8 @@ static int php_brotli_compress_close(php_stream *stream,
         }
     }
 
-    if (self->cctx) {
-        BrotliEncoderDestroyInstance(self->cctx);
-        self->cctx = NULL;
-    }
-    if (self->output) {
-        efree(self->output);
-    }
+    php_brotli_context_close(&self->ctx);
+
     efree(self);
     stream->abstract = NULL;
 
@@ -682,7 +667,7 @@ static ssize_t php_brotli_compress_write(php_stream *stream,
         size_t available_out = PHP_BROTLI_BUFFER_SIZE;
         uint8_t *next_out = output;
 
-        if (BrotliEncoderCompressStream(self->cctx,
+        if (BrotliEncoderCompressStream(self->ctx.encoder,
                                         BROTLI_OPERATION_PROCESS,
                                         &available_in,
                                         &next_in,
@@ -789,27 +774,22 @@ php_stream_brotli_opener(
         return NULL;
     }
 
+    php_brotli_context_init(&self->ctx);
+
     /* File */
     if (compress) {
-        self->dctx = NULL;
-        if (php_brotli_encoder_create(&self->cctx, level, 0, 0) != SUCCESS) {
+        if (php_brotli_encoder_create(&self->ctx.encoder,
+                                      level, 0, 0) != SUCCESS) {
             php_error_docref(NULL, E_WARNING,
                              "brotli: compression context failed");
             php_stream_close(self->stream);
             efree(self);
             return NULL;
         }
-        self->available_in = 0;
-        self->next_in = NULL;
-        self->available_out = 0;
-        self->next_out = NULL;
-        self->output = NULL;
 
         return php_stream_alloc(&php_stream_brotli_write_ops, self, NULL, mode);
-
     } else {
-        self->cctx = NULL;
-        if (php_brotli_decoder_create(&self->dctx) != SUCCESS) {
+        if (php_brotli_decoder_create(&self->ctx.decoder) != SUCCESS) {
             php_error_docref(NULL, E_WARNING,
                              "brotli: decompression context failed");
             php_stream_close(self->stream);
@@ -818,12 +798,6 @@ php_stream_brotli_opener(
         }
 
         self->result = BROTLI_DECODER_RESULT_NEEDS_MORE_INPUT;
-
-        self->available_in = 0;
-        self->next_in = NULL;
-        self->available_out = 0;
-        self->next_out = NULL;
-        self->output = NULL;
 
         return php_stream_alloc(&php_stream_brotli_read_ops, self, NULL, mode);
     }
