@@ -86,16 +86,6 @@ static zend_function_entry brotli_functions[] = {
 
 static const size_t PHP_BROTLI_BUFFER_SIZE = 1 << 19;
 
-static int php_brotli_decoder_create(BrotliDecoderState **decoder)
-{
-    *decoder = BrotliDecoderCreateInstance(NULL, NULL, NULL);
-    if (!*decoder) {
-        return FAILURE;
-    }
-
-    return SUCCESS;
-}
-
 struct _php_brotli_context {
     BrotliEncoderState *encoder;
     BrotliDecoderState *decoder;
@@ -149,6 +139,16 @@ static int php_brotli_context_create_encoder(php_brotli_context *ctx,
     BrotliEncoderSetParameter(ctx->encoder, BROTLI_PARAM_QUALITY, quality);
     BrotliEncoderSetParameter(ctx->encoder, BROTLI_PARAM_LGWIN, lgwin);
     BrotliEncoderSetParameter(ctx->encoder, BROTLI_PARAM_MODE, mode);
+
+    return SUCCESS;
+}
+
+static int php_brotli_context_create_decoder(php_brotli_context *ctx)
+{
+    ctx->decoder = BrotliDecoderCreateInstance(NULL, NULL, NULL);
+    if (!ctx->decoder) {
+        return FAILURE;
+    }
 
     return SUCCESS;
 }
@@ -788,7 +788,7 @@ php_stream_brotli_opener(
 
         return php_stream_alloc(&php_stream_brotli_write_ops, self, NULL, mode);
     } else {
-        if (php_brotli_decoder_create(&self->ctx.decoder) != SUCCESS) {
+        if (php_brotli_context_create_decoder(&self->ctx) != SUCCESS) {
             php_error_docref(NULL, E_WARNING,
                              "brotli: decompression context failed");
             php_stream_close(self->stream);
@@ -1350,7 +1350,7 @@ static ZEND_FUNCTION(brotli_uncompress_init)
 
     PHP_BROTLI_CONTEXT_OBJ_INIT_OF_CLASS(php_brotli_uncompress_context_ce);
 
-    if (php_brotli_decoder_create(&ctx->decoder) != SUCCESS) {
+    if (php_brotli_context_create_decoder(ctx) != SUCCESS) {
         php_error_docref(NULL, E_WARNING,
                          "Brotli incremental uncompress init failed");
         RETURN_FALSE;
