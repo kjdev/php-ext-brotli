@@ -131,6 +131,50 @@ static int php_brotli_decoder_create(BrotliDecoderState **decoder)
     return SUCCESS;
 }
 
+struct _php_brotli_context {
+    BrotliEncoderState *encoder;
+    BrotliDecoderState *decoder;
+    size_t available_in;
+    const uint8_t *next_in;
+    size_t available_out;
+    uint8_t *next_out;
+    uint8_t *output;
+    zend_object std;
+};
+
+static void php_brotli_context_init(php_brotli_context *ctx)
+{
+    ctx->encoder = NULL;
+    ctx->decoder = NULL;
+    ctx->available_in = 0;
+    ctx->next_in = NULL;
+    ctx->available_out = 0;
+    ctx->next_out = NULL;
+    ctx->output = NULL;
+}
+
+static void php_brotli_context_close(php_brotli_context *ctx)
+{
+    if (ctx->encoder) {
+        BrotliEncoderDestroyInstance(ctx->encoder);
+        ctx->encoder = NULL;
+    }
+    if (ctx->decoder) {
+        BrotliDecoderDestroyInstance(ctx->decoder);
+        ctx->decoder = NULL;
+    }
+
+    if (ctx->output) {
+        efree(ctx->output);
+        ctx->output = NULL;
+    }
+
+    ctx->available_in = 0;
+    ctx->next_in = NULL;
+    ctx->available_out = 0;
+    ctx->next_out = NULL;
+}
+
 #define PHP_BROTLI_OUTPUT_HANDLER "ob_brotli_handler"
 
 static int php_brotli_output_encoding(void)
@@ -155,23 +199,6 @@ static int php_brotli_output_encoding(void)
     }
 
     return BROTLI_G(compression_coding);
-}
-
-static void php_brotli_context_close(php_brotli_context *ctx)
-{
-    if (ctx->state.encoder) {
-        BrotliEncoderDestroyInstance(ctx->state.encoder);
-        ctx->state.encoder = NULL;
-    }
-    if (ctx->output) {
-        efree(ctx->output);
-        ctx->output = NULL;
-    }
-
-    ctx->available_in = 0;
-    ctx->next_in = NULL;
-    ctx->available_out = 0;
-    ctx->next_out = NULL;
 }
 
 static int php_brotli_output_handler(void **handler_context,
@@ -201,7 +228,7 @@ static int php_brotli_output_handler(void **handler_context,
     }
 
     if (output_context->op & PHP_OUTPUT_HANDLER_START) {
-        if (php_brotli_encoder_create(&ctx->state.encoder,
+        if (php_brotli_encoder_create(&ctx->encoder,
                                       quality, 0, 0) != SUCCESS) {
             return FAILURE;
         }
@@ -235,7 +262,7 @@ static int php_brotli_output_handler(void **handler_context,
             ctx->next_in = NULL;
         }
 
-        if (!BrotliEncoderCompressStream(ctx->state.encoder,
+        if (!BrotliEncoderCompressStream(ctx->encoder,
                                          (output_context->op
                                           & PHP_OUTPUT_HANDLER_FINAL)
                                          ? BROTLI_OPERATION_FINISH
@@ -274,7 +301,7 @@ static int php_brotli_output_handler(void **handler_context,
             return SUCCESS;
         } else {
             // restart
-            if (php_brotli_encoder_create(&ctx->state.encoder,
+            if (php_brotli_encoder_create(&ctx->encoder,
                                           quality, 0, 0) != SUCCESS) {
                 return FAILURE;
             }
@@ -288,13 +315,7 @@ static php_brotli_context *php_brotli_output_handler_context_init(void)
 {
     php_brotli_context *ctx
         = (php_brotli_context *)ecalloc(1, sizeof(php_brotli_context));
-    ctx->state.encoder = NULL;
-    ctx->state.decoder = NULL;
-    ctx->available_in = 0;
-    ctx->next_in = NULL;
-    ctx->available_out = 0;
-    ctx->next_out = NULL;
-    ctx->output = NULL;
+    php_brotli_context_init(ctx);
     return ctx;
 }
 
@@ -834,13 +855,7 @@ php_stream_wrapper php_stream_brotli_wrapper = {
   php_brotli_context *ctx; \
   object_init_ex(return_value, ce); \
   ctx = php_brotli_context_from_obj(Z_OBJ_P(return_value)); \
-  ctx->state.encoder = NULL; \
-  ctx->state.decoder = NULL; \
-  ctx->available_in = 0; \
-  ctx->next_in = NULL; \
-  ctx->available_out = 0; \
-  ctx->next_out = NULL; \
-  ctx->output = NULL;
+  php_brotli_context_init(ctx)
 
 static php_brotli_context *php_brotli_context_from_obj(zend_object *obj)
 {
@@ -1192,7 +1207,7 @@ static ZEND_FUNCTION(brotli_compress_init)
 
     PHP_BROTLI_CONTEXT_OBJ_INIT_OF_CLASS(php_brotli_compress_context_ce);
 
-    if (php_brotli_encoder_create(&ctx->state.encoder,
+    if (php_brotli_encoder_create(&ctx->encoder,
                                   quality, 0, mode) != SUCCESS) {
         zval_ptr_dtor(return_value);
         php_error_docref(NULL, E_WARNING,
@@ -1232,7 +1247,7 @@ static ZEND_FUNCTION(brotli_compress_add)
 #else
     ctx = php_brotli_context_from_obj(Z_OBJ_P(obj));
 #endif
-    if (ctx == NULL || ctx->state.encoder == NULL) {
+    if (ctx == NULL || ctx->encoder == NULL) {
         php_error_docref(NULL, E_WARNING,
                          "Brotli incremental compress resource failed");
         RETURN_FALSE;
@@ -1245,11 +1260,10 @@ static ZEND_FUNCTION(brotli_compress_add)
     ctx->next_in = in_buf;
     ctx->available_in = in_size;
 
-    while (ctx->available_in
-           || BrotliEncoderHasMoreOutput(ctx->state.encoder)) {
+    while (ctx->available_in || BrotliEncoderHasMoreOutput(ctx->encoder)) {
         ctx->available_out = buffer_size;
         ctx->next_out = buffer;
-        if (BrotliEncoderCompressStream(ctx->state.encoder,
+        if (BrotliEncoderCompressStream(ctx->encoder,
                                         mode,
                                         &ctx->available_in,
                                         &ctx->next_in,
@@ -1270,10 +1284,10 @@ static ZEND_FUNCTION(brotli_compress_add)
     }
 
     if (mode == BROTLI_OPERATION_FINISH) {
-        while (!BrotliEncoderIsFinished(ctx->state.encoder)) {
+        while (!BrotliEncoderIsFinished(ctx->encoder)) {
             ctx->available_out = buffer_size;
             ctx->next_out = buffer;
-            if (BrotliEncoderCompressStream(ctx->state.encoder,
+            if (BrotliEncoderCompressStream(ctx->encoder,
                                             BROTLI_OPERATION_FINISH,
                                             &ctx->available_in,
                                             &ctx->next_in,
@@ -1364,7 +1378,7 @@ static ZEND_FUNCTION(brotli_uncompress_init)
 
     PHP_BROTLI_CONTEXT_OBJ_INIT_OF_CLASS(php_brotli_uncompress_context_ce);
 
-    if (php_brotli_decoder_create(&ctx->state.decoder) != SUCCESS) {
+    if (php_brotli_decoder_create(&ctx->decoder) != SUCCESS) {
         php_error_docref(NULL, E_WARNING,
                          "Brotli incremental uncompress init failed");
         RETURN_FALSE;
@@ -1402,7 +1416,7 @@ static ZEND_FUNCTION(brotli_uncompress_add)
 #else
     ctx = php_brotli_context_from_obj(Z_OBJ_P(obj));
 #endif
-    if (ctx == NULL || ctx->state.decoder == NULL) {
+    if (ctx == NULL || ctx->decoder == NULL) {
         php_error_docref(NULL, E_WARNING,
                          "Brotli incremental uncompress resource failed");
         RETURN_FALSE;
@@ -1422,7 +1436,7 @@ static ZEND_FUNCTION(brotli_uncompress_add)
     while (result == BROTLI_DECODER_RESULT_NEEDS_MORE_OUTPUT) {
         ctx->available_out = buffer_size;
         ctx->next_out = buffer;
-        result = BrotliDecoderDecompressStream(ctx->state.decoder,
+        result = BrotliDecoderDecompressStream(ctx->decoder,
                                                &ctx->available_in,
                                                &ctx->next_in,
                                                &ctx->available_out,
