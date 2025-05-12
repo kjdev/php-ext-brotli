@@ -28,7 +28,7 @@ static ZEND_FUNCTION(brotli_uncompress_add);
 
 ZEND_BEGIN_ARG_INFO_EX(arginfo_brotli_compress, 0, 0, 1)
     ZEND_ARG_INFO(0, data)
-    ZEND_ARG_INFO(0, quality)
+    ZEND_ARG_INFO(0, level)
     ZEND_ARG_INFO(0, mode)
 ZEND_END_ARG_INFO()
 
@@ -38,7 +38,7 @@ ZEND_BEGIN_ARG_INFO_EX(arginfo_brotli_uncompress, 0, 0, 1)
 ZEND_END_ARG_INFO()
 
 ZEND_BEGIN_ARG_INFO_EX(arginfo_brotli_compress_init, 0, 0, 0)
-    ZEND_ARG_INFO(0, quality)
+    ZEND_ARG_INFO(0, level)
     ZEND_ARG_INFO(0, mode)
 ZEND_END_ARG_INFO()
 
@@ -1162,19 +1162,19 @@ static ZEND_FUNCTION(brotli_compress)
     char *in;
     size_t in_size;
 
-    zend_long quality = BROTLI_DEFAULT_QUALITY;
+    zend_long level = BROTLI_DEFAULT_QUALITY;
     zend_long mode =  BROTLI_MODE_GENERIC;
 
     ZEND_PARSE_PARAMETERS_START(1, 3)
         Z_PARAM_STRING(in, in_size)
         Z_PARAM_OPTIONAL
-        Z_PARAM_LONG(quality)
+        Z_PARAM_LONG(level)
         Z_PARAM_LONG(mode)
     ZEND_PARSE_PARAMETERS_END();
 
     php_brotli_context ctx;
     php_brotli_context_init(&ctx);
-    if (php_brotli_context_create_encoder_ex(&ctx, quality, 0, mode,
+    if (php_brotli_context_create_encoder_ex(&ctx, level, 0, mode,
                                              1) != SUCCESS) {
         php_brotli_context_close(&ctx);
         RETURN_FALSE;
@@ -1218,18 +1218,18 @@ static ZEND_FUNCTION(brotli_compress)
 
 static ZEND_FUNCTION(brotli_compress_init)
 {
-    zend_long quality = BROTLI_DEFAULT_QUALITY;
+    zend_long level = BROTLI_DEFAULT_QUALITY;
     zend_long mode =  BROTLI_MODE_GENERIC;
 
     ZEND_PARSE_PARAMETERS_START(0, 2)
         Z_PARAM_OPTIONAL
-        Z_PARAM_LONG(quality)
+        Z_PARAM_LONG(level)
         Z_PARAM_LONG(mode)
     ZEND_PARSE_PARAMETERS_END();
 
     PHP_BROTLI_CONTEXT_OBJ_INIT_OF_CLASS(php_brotli_compress_context_ce);
 
-    if (php_brotli_context_create_encoder_ex(ctx, quality, 0, mode,
+    if (php_brotli_context_create_encoder_ex(ctx, level, 0, mode,
                                              1) != SUCCESS) {
         zval_ptr_dtor(return_value);
         RETURN_FALSE;

@@ -57,11 +57,11 @@ namespace {
   const BROTLI_FINISH = UNKNOWN;
 
 
-  function brotli_compress(string $data, int $quality = BROTLI_COMPRESS_LEVEL_DEFAULT, int $mode = BROTLI_GENERIC): string|false {}
+  function brotli_compress(string $data, int $level = BROTLI_COMPRESS_LEVEL_DEFAULT, int $mode = BROTLI_GENERIC): string|false {}
 
   function brotli_uncompress(string $data, int $length = 0): string|false {}
 
-  function brotli_compress_init(int $quality = BROTLI_COMPRESS_LEVEL_DEFAULT, int $mode = BROTLI_GENERIC): Brotli\Compress\Context|false {}
+  function brotli_compress_init(int $level = BROTLI_COMPRESS_LEVEL_DEFAULT, int $mode = BROTLI_GENERIC): Brotli\Compress\Context|false {}
 
   function brotli_compress_add(Brotli\Compress\Context $context, string $data, int $mode = BROTLI_FLUSH): string|false {}
 
@@ -72,11 +72,11 @@ namespace {
 
 namespace Brotli {
 
-  function compress(string $data, int $quality = \BROTLI_COMPRESS_LEVEL_DEFAULT, int $mode = \BROTLI_GENERIC): string|false {}
+  function compress(string $data, int $level = \BROTLI_COMPRESS_LEVEL_DEFAULT, int $mode = \BROTLI_GENERIC): string|false {}
 
   function uncompress(string $data, int $length = 0): string|false {}
 
-  function compress_init(int $quality = \BROTLI_COMPRESS_LEVEL_DEFAULT, int $mode = \BROTLI_GENERIC): Compress\Context|false {}
+  function compress_init(int $level = \BROTLI_COMPRESS_LEVEL_DEFAULT, int $mode = \BROTLI_GENERIC): Compress\Context|false {}
 
   function compress_add(Compress\Context $context, string $data, int $mode = \BROTLI_FLUSH): string|false {}
 
