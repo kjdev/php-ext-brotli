@@ -6,8 +6,8 @@ if (!extension_loaded('brotli')) die('skip need ext/brotli');
 ?>
 --FILE--
 <?php
-function test($quality = 0, $mode = 0, $types = []) {
-  echo "quality={$quality}, mode={$mode}\n";
+function test($level = 0, $mode = 0, $types = []) {
+  echo "level={$level}, mode={$mode}\n";
 
   $modeTypes = array_merge([
     'BROTLI_PROCESS' => BROTLI_PROCESS,
@@ -18,7 +18,7 @@ function test($quality = 0, $mode = 0, $types = []) {
 
     $uncompressed = $compressed = '';
 
-    $resource = brotli_compress_init($quality, $mode);
+    $resource = brotli_compress_init($level, $mode);
     if ($resource === false) {
       echo "ERROR\n";
       return;
@@ -42,8 +42,8 @@ function test($quality = 0, $mode = 0, $types = []) {
   }
 }
 
-foreach ([0, 9, 11, 20, -1] as $quality) {
-  test($quality, 0);
+foreach ([0, 9, 11, 20, -1] as $level) {
+  test($level, 0);
 }
 foreach ([0, 1, 2, 3, -1] as $mode) {
   test(0, $mode);
@@ -52,41 +52,41 @@ test(0, 0, ['INCORRECT' => -1]);
 ?>
 ===DONE===
 --EXPECTF--
-quality=0, mode=0
+level=0, mode=0
 OK
 OK
-quality=9, mode=0
+level=9, mode=0
 OK
 OK
-quality=11, mode=0
+level=11, mode=0
 OK
 OK
-quality=20, mode=0
+level=20, mode=0
 
-Warning: brotli_compress_init(): failed to compression quality (20): must be within 0..11 in %s on line %d
+Warning: brotli_compress_init(): failed to compression level (20): must be within 0..11 in %s on line %d
 ERROR
-quality=-1, mode=0
+level=-1, mode=0
 
-Warning: brotli_compress_init(): failed to compression quality (-1): must be within 0..11 in %s on line %d
+Warning: brotli_compress_init(): failed to compression level (-1): must be within 0..11 in %s on line %d
 ERROR
-quality=0, mode=0
+level=0, mode=0
 OK
 OK
-quality=0, mode=1
+level=0, mode=1
 OK
 OK
-quality=0, mode=2
+level=0, mode=2
 OK
 OK
-quality=0, mode=3
+level=0, mode=3
 
 Warning: brotli_compress_init(): failed to compression mode (3): must be BROTLI_GENERIC(0)|BROTLI_TEXT(1)|BROTLI_FONT(2) in %s on line %d
 ERROR
-quality=0, mode=-1
+level=0, mode=-1
 
 Warning: brotli_compress_init(): failed to compression mode (-1): must be BROTLI_GENERIC(0)|BROTLI_TEXT(1)|BROTLI_FONT(2) in %s on line %d
 ERROR
-quality=0, mode=0
+level=0, mode=0
 OK
 OK
 

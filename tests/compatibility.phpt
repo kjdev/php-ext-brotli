@@ -20,10 +20,10 @@ foreach ($files as $filename) {
 
     $split =  explode('.compressed', $filename);
     $expected = $split[0];
-    $quality = -1;
+    $level = -1;
 
     if (isset($split[1])) {
-        $quality = (int)$split[1];
+        $level = (int)$split[1];
     }
 
     if (file_exists($expected)) {
@@ -38,7 +38,7 @@ foreach ($files as $filename) {
             echo "  read uncompressed .. OK\n";
         }
 
-        $expected_data = brotli_compress($data, $quality);
+        $expected_data = brotli_compress($data, $level);
         if (!$expected_data) {
             echo "  compressed        .. NG\n";
             exit(1);

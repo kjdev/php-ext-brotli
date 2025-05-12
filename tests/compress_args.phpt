@@ -4,10 +4,10 @@ brotli_compress() functionality with arguments
 <?php
 include(dirname(__FILE__) . '/data.inc');
 
-function test($data, $quality = 0, $mode = 0) {
-    echo "quality={$quality}, mode={$mode}\n";
+function test($data, $level = 0, $mode = 0) {
+    echo "level={$level}, mode={$mode}\n";
 
-    $compressed = brotli_compress($data, $quality, $mode);
+    $compressed = brotli_compress($data, $level, $mode);
     if ($compressed === false) {
         echo "ERROR\n";
         return;
@@ -20,8 +20,8 @@ function test($data, $quality = 0, $mode = 0) {
     }
 }
 
-foreach ([0, 9, 11, 20, -1] as $quality) {
-    test($data, $quality, BROTLI_GENERIC);
+foreach ([0, 9, 11, 20, -1] as $level) {
+    test($data, $level, BROTLI_GENERIC);
 }
 foreach ([0, 1, 2, 3, -1] as $mode) {
     test($data, BROTLI_COMPRESS_LEVEL_DEFAULT, $mode);
@@ -29,31 +29,31 @@ foreach ([0, 1, 2, 3, -1] as $mode) {
 ?>
 ===DONE===
 --EXPECTF--
-quality=0, mode=0
+level=0, mode=0
 OK
-quality=9, mode=0
+level=9, mode=0
 OK
-quality=11, mode=0
+level=11, mode=0
 OK
-quality=20, mode=0
+level=20, mode=0
 
-Warning: brotli_compress(): failed to compression quality (20): must be within 0..11 in %s on line %d
+Warning: brotli_compress(): failed to compression level (20): must be within 0..11 in %s on line %d
 ERROR
-quality=-1, mode=0
+level=-1, mode=0
 
-Warning: brotli_compress(): failed to compression quality (-1): must be within 0..11 in %s on line %d
+Warning: brotli_compress(): failed to compression level (-1): must be within 0..11 in %s on line %d
 ERROR
-quality=11, mode=0
+level=11, mode=0
 OK
-quality=11, mode=1
+level=11, mode=1
 OK
-quality=11, mode=2
+level=11, mode=2
 OK
-quality=11, mode=3
+level=11, mode=3
 
 Warning: brotli_compress(): failed to compression mode (3): must be BROTLI_GENERIC(0)|BROTLI_TEXT(1)|BROTLI_FONT(2) in %s on line %d
 ERROR
-quality=11, mode=-1
+level=11, mode=-1
 
 Warning: brotli_compress(): failed to compression mode (-1): must be BROTLI_GENERIC(0)|BROTLI_TEXT(1)|BROTLI_FONT(2) in %s on line %d
 ERROR

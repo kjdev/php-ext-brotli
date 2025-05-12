@@ -18,14 +18,14 @@ $files = roundtrip_files();
 $qualities = array(BROTLI_COMPRESS_LEVEL_MIN, 6, 9, BROTLI_COMPRESS_LEVEL_MAX);
 
 foreach ($files as $filename) {
-    foreach ($qualities as $quality) {
-        echo 'Roundtrip testing file ', basename($filename), ' at quality ', $quality, PHP_EOL;
+    foreach ($qualities as $level) {
+        echo 'Roundtrip testing file ', basename($filename), ' at level ', $level, PHP_EOL;
 
         $expected = $filename;
 
         if (file_exists($expected)) {
             $data = file_get_contents($expected);
-            $expected_data = brotli_uncompress(brotli_compress($data, $quality));
+            $expected_data = brotli_uncompress(brotli_compress($data, $level));
             if ($data !== $expected_data) {
                 echo "  NG\n";
                 exit(1);
@@ -37,59 +37,59 @@ foreach ($files as $filename) {
 }
 
 --EXPECTF--
-Roundtrip testing file alice29.txt at quality 0
+Roundtrip testing file alice29.txt at level 0
   OK
-Roundtrip testing file alice29.txt at quality 6
+Roundtrip testing file alice29.txt at level 6
   OK
-Roundtrip testing file alice29.txt at quality 9
+Roundtrip testing file alice29.txt at level 9
   OK
-Roundtrip testing file alice29.txt at quality 11
+Roundtrip testing file alice29.txt at level 11
   OK
-Roundtrip testing file asyoulik.txt at quality 0
+Roundtrip testing file asyoulik.txt at level 0
   OK
-Roundtrip testing file asyoulik.txt at quality 6
+Roundtrip testing file asyoulik.txt at level 6
   OK
-Roundtrip testing file asyoulik.txt at quality 9
+Roundtrip testing file asyoulik.txt at level 9
   OK
-Roundtrip testing file asyoulik.txt at quality 11
+Roundtrip testing file asyoulik.txt at level 11
   OK
-Roundtrip testing file lcet10.txt at quality 0
+Roundtrip testing file lcet10.txt at level 0
   OK
-Roundtrip testing file lcet10.txt at quality 6
+Roundtrip testing file lcet10.txt at level 6
   OK
-Roundtrip testing file lcet10.txt at quality 9
+Roundtrip testing file lcet10.txt at level 9
   OK
-Roundtrip testing file lcet10.txt at quality 11
+Roundtrip testing file lcet10.txt at level 11
   OK
-Roundtrip testing file plrabn12.txt at quality 0
+Roundtrip testing file plrabn12.txt at level 0
   OK
-Roundtrip testing file plrabn12.txt at quality 6
+Roundtrip testing file plrabn12.txt at level 6
   OK
-Roundtrip testing file plrabn12.txt at quality 9
+Roundtrip testing file plrabn12.txt at level 9
   OK
-Roundtrip testing file plrabn12.txt at quality 11
+Roundtrip testing file plrabn12.txt at level 11
   OK
-Roundtrip testing file encode.c at quality 0
+Roundtrip testing file encode.c at level 0
   OK
-Roundtrip testing file encode.c at quality 6
+Roundtrip testing file encode.c at level 6
   OK
-Roundtrip testing file encode.c at quality 9
+Roundtrip testing file encode.c at level 9
   OK
-Roundtrip testing file encode.c at quality 11
+Roundtrip testing file encode.c at level 11
   OK
-Roundtrip testing file dictionary.h at quality 0
+Roundtrip testing file dictionary.h at level 0
   OK
-Roundtrip testing file dictionary.h at quality 6
+Roundtrip testing file dictionary.h at level 6
   OK
-Roundtrip testing file dictionary.h at quality 9
+Roundtrip testing file dictionary.h at level 9
   OK
-Roundtrip testing file dictionary.h at quality 11
+Roundtrip testing file dictionary.h at level 11
   OK
-Roundtrip testing file decode.c at quality 0
+Roundtrip testing file decode.c at level 0
   OK
-Roundtrip testing file decode.c at quality 6
+Roundtrip testing file decode.c at level 6
   OK
-Roundtrip testing file decode.c at quality 9
+Roundtrip testing file decode.c at level 9
   OK
-Roundtrip testing file decode.c at quality 11
+Roundtrip testing file decode.c at level 11
   OK
