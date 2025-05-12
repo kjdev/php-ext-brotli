@@ -109,7 +109,7 @@ static void php_brotli_context_init(php_brotli_context *ctx)
 }
 
 static int php_brotli_context_create_encoder_ex(php_brotli_context *ctx,
-                                                long quality, int lgwin,
+                                                long level, int lgwin,
                                                 long mode, int fail)
 {
     ctx->encoder = BrotliEncoderCreateInstance(NULL, NULL, NULL);
@@ -119,18 +119,18 @@ static int php_brotli_context_create_encoder_ex(php_brotli_context *ctx,
         return FAILURE;
     }
 
-    if (quality < BROTLI_MIN_QUALITY || quality > BROTLI_MAX_QUALITY) {
+    if (level < BROTLI_MIN_QUALITY || level > BROTLI_MAX_QUALITY) {
         php_error_docref(NULL, E_WARNING,
-                         "%s compression quality (%ld)%s:"
+                         "%s compression level (%ld)%s:"
                          " must be within %d..%d",
                          (fail ? "failed to" : "brotli: set"),
-                         (long)quality,
+                         (long)level,
                          (fail ? "": " to BROTLI_COMPRESS_LEVEL_DEFAULT"),
                          BROTLI_MIN_QUALITY, BROTLI_MAX_QUALITY);
         if (fail) {
             return FAILURE;
         }
-        quality = BROTLI_DEFAULT_QUALITY;
+        level = BROTLI_DEFAULT_QUALITY;
     }
     if (lgwin == 0) {
         lgwin = BROTLI_DEFAULT_WINDOW;
@@ -152,7 +152,7 @@ static int php_brotli_context_create_encoder_ex(php_brotli_context *ctx,
         mode = BROTLI_MODE_GENERIC;
     }
 
-    if (!BrotliEncoderSetParameter(ctx->encoder, BROTLI_PARAM_QUALITY, quality)
+    if (!BrotliEncoderSetParameter(ctx->encoder, BROTLI_PARAM_QUALITY, level)
         || !BrotliEncoderSetParameter(ctx->encoder, BROTLI_PARAM_LGWIN, lgwin)
         || !BrotliEncoderSetParameter(ctx->encoder, BROTLI_PARAM_MODE, mode)) {
         php_error_docref(NULL, E_WARNING,
@@ -164,8 +164,8 @@ static int php_brotli_context_create_encoder_ex(php_brotli_context *ctx,
     return SUCCESS;
 }
 
-#define php_brotli_context_create_encoder(ctx, quality, lgwin, mode) \
-    php_brotli_context_create_encoder_ex(ctx, quality, lgwin, mode, 0)
+#define php_brotli_context_create_encoder(ctx, level, lgwin, mode) \
+    php_brotli_context_create_encoder_ex(ctx, level, lgwin, mode, 0)
 
 static int php_brotli_context_create_decoder(php_brotli_context *ctx)
 {
@@ -228,7 +228,7 @@ static int php_brotli_output_encoding(void)
 static int php_brotli_output_handler(void **handler_context,
                                      php_output_context *output_context)
 {
-    long quality = BROTLI_DEFAULT_QUALITY;
+    long level = BROTLI_DEFAULT_QUALITY;
     php_brotli_context *ctx = *(php_brotli_context **)handler_context;
 
     if (!php_brotli_output_encoding()) {
@@ -246,13 +246,13 @@ static int php_brotli_output_handler(void **handler_context,
         return FAILURE;
     }
 
-    quality = BROTLI_G(output_compression_level);
-    if (quality < BROTLI_MIN_QUALITY || quality > BROTLI_MAX_QUALITY) {
-        quality = BROTLI_DEFAULT_QUALITY;
+    level = BROTLI_G(output_compression_level);
+    if (level < BROTLI_MIN_QUALITY || level > BROTLI_MAX_QUALITY) {
+        level = BROTLI_DEFAULT_QUALITY;
     }
 
     if (output_context->op & PHP_OUTPUT_HANDLER_START) {
-        if (php_brotli_context_create_encoder(ctx, quality, 0, 0) != SUCCESS) {
+        if (php_brotli_context_create_encoder(ctx, level, 0, 0) != SUCCESS) {
             return FAILURE;
         }
     }
@@ -325,7 +325,7 @@ static int php_brotli_output_handler(void **handler_context,
         } else {
             // restart
             if (php_brotli_context_create_encoder(ctx,
-                                                  quality, 0, 0) != SUCCESS) {
+                                                  level, 0, 0) != SUCCESS) {
                 return FAILURE;
             }
         }
@@ -1501,7 +1501,7 @@ static ZEND_FUNCTION(brotli_uncompress_add)
 static int APC_SERIALIZER_NAME(brotli)(APC_SERIALIZER_ARGS)
 {
     int result;
-    int lgwin = BROTLI_DEFAULT_WINDOW, quality = BROTLI_DEFAULT_QUALITY;
+    int lgwin = BROTLI_DEFAULT_WINDOW, level = BROTLI_DEFAULT_QUALITY;
     php_serialize_data_t var_hash;
     smart_str var = {0};
     BrotliEncoderMode mode = BROTLI_MODE_GENERIC;
@@ -1516,7 +1516,7 @@ static int APC_SERIALIZER_NAME(brotli)(APC_SERIALIZER_ARGS)
     *buf_len = BrotliEncoderMaxCompressedSize(ZSTR_LEN(var.s));
     *buf = (char*) emalloc(*buf_len);
 
-    if (!BrotliEncoderCompress(quality, lgwin, mode,
+    if (!BrotliEncoderCompress(level, lgwin, mode,
                                ZSTR_LEN(var.s),
                                (const uint8_t*) ZSTR_VAL(var.s),
                                buf_len, (uint8_t*) *buf)) {
