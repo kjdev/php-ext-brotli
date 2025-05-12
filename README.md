@@ -82,7 +82,7 @@ BROTLI\_COMPRESS\_LEVEL\_DEFAULT  | Default compress level value
 
 #### Description
 
-string **brotli\_compress** ( string _$data_ [, int _$quality_ = BROTLI\_COMPRESS\_LEVEL\_DEFAULT, int _$mode_ = BROTLI\_GENERIC ] )
+string **brotli\_compress** ( string _$data_ [, int _$level_ = BROTLI\_COMPRESS\_LEVEL\_DEFAULT, int _$mode_ = BROTLI\_GENERIC ] )
 
 This function compress a string.
 
@@ -92,9 +92,9 @@ This function compress a string.
 
   The data to compress.
 
-* _quality_
+* _level_
 
-  The higher the quality, the slower the compression.
+  The higher the level, the slower the compression.
   (Defaults to `BROTLI\_COMPRESS\_LEVEL\_DEFAULT`)
 
 * _mode_
@@ -134,15 +134,15 @@ The original uncompressed data or FALSE on error.
 
 #### Description
 
-Brotli\Compress\Context **brotli\_compress\_init** ( [ int _$quality_ = BROTLI\_COMPRESS\_LEVEL\_DEFAULT, int _$mode_ = BROTLI\_GENERIC ] )
+Brotli\Compress\Context **brotli\_compress\_init** ( [ int _$level_ = BROTLI\_COMPRESS\_LEVEL\_DEFAULT, int _$mode_ = BROTLI\_GENERIC ] )
 
 Initialize an incremental compress context.
 
 #### Parameters
 
-* _quality_
+* _level_
 
-  The higher the quality, the slower the compression.
+  The higher the level, the slower the compression.
   (Defaults to `BROTLI\_COMPRESS\_LEVEL\_DEFAULT`)
 
 * _mode_
@@ -232,9 +232,9 @@ Returns a chunk of uncompressed data, or FALSE on failure.
 ```
 Namespace Brotli;
 
-function compress( $data [, $quality = \\BROTLI\_COMPRESS\_LEVEL\_DEFAULT, $mode = \\BROTLI\_GENERIC ] )
+function compress( $data [, $level = \\BROTLI\_COMPRESS\_LEVEL\_DEFAULT, $mode = \\BROTLI\_GENERIC ] )
 function uncompress( $data [, $length = 0 ] )
-function compress\_init( [ $quality = \\BROTLI\_COMPRESS\_LEVEL\_DEFAULT, $mode = \\BROTLI\_GENERIC ] )
+function compress\_init( [ $level = \\BROTLI\_COMPRESS\_LEVEL\_DEFAULT, $mode = \\BROTLI\_GENERIC ] )
 function compress\_add( \\Brotli\\Compress\\Context $context, string $data [, $mode = \\BROTLI\_FLUSH] )
 function uncompress\_init()
 function uncompress\_add( \\Brotli\\UnCompress\\Context $context, string $data [, $mode = \\BROTLI\_FLUSH] )
