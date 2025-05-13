@@ -210,15 +210,30 @@ static int php_brotli_context_create_encoder_ex(php_brotli_context *ctx,
 #define php_brotli_context_create_encoder(ctx, level, lgwin, mode) \
     php_brotli_context_create_encoder_ex(ctx, level, lgwin, mode, 0)
 
-static int php_brotli_context_create_decoder(php_brotli_context *ctx)
+static int php_brotli_context_create_decoder_ex(php_brotli_context *ctx,
+                                                int fail)
 {
     ctx->decoder = BrotliDecoderCreateInstance(NULL, NULL, NULL);
     if (!ctx->decoder) {
+        php_error_docref(NULL, E_WARNING, "%sfailed to prepare uncompression",
+                         (fail ? "" : "brotli: "));
+
+        return FAILURE;
+    }
+
+    if (!BrotliDecoderSetParameter(ctx->decoder,
+                                   BROTLI_DECODER_PARAM_LARGE_WINDOW, 1u)) {
+        php_error_docref(NULL, E_WARNING,
+                         "%sfailed to set uncompression parameters",
+                         (fail ? "" : "brotli: "));
         return FAILURE;
     }
 
     return SUCCESS;
 }
+
+#define php_brotli_context_create_decoder(ctx) \
+    php_brotli_context_create_decoder_ex(ctx, 0)
 
 static void php_brotli_context_close(php_brotli_context *ctx)
 {
@@ -1406,33 +1421,34 @@ static ZEND_FUNCTION(brotli_uncompress)
         in_size = max_size;
     }
 
-    BrotliDecoderState *state = BrotliDecoderCreateInstance(NULL, NULL, NULL);
-    if (!state) {
-        php_error_docref(NULL, E_WARNING, "failed to prepare uncompress");
+    php_brotli_context ctx;
+    php_brotli_context_init(&ctx);
+    if (php_brotli_context_create_decoder_ex(&ctx, 1) != SUCCESS) {
+        php_brotli_context_close(&ctx);
         RETURN_FALSE;
     }
 
-    BrotliDecoderSetParameter(state, BROTLI_DECODER_PARAM_LARGE_WINDOW, 1u);
-
-    size_t available_in = in_size;
-    const uint8_t *next_in = (const uint8_t *)in;
+    ctx.available_in = in_size;
+    ctx.next_in = (const uint8_t *)in;
     size_t buffer_size = PHP_BROTLI_BUFFER_SIZE;
     uint8_t *buffer = (uint8_t *)emalloc(buffer_size);
-
     BrotliDecoderResult result = BROTLI_DECODER_RESULT_NEEDS_MORE_OUTPUT;
     while (result == BROTLI_DECODER_RESULT_NEEDS_MORE_OUTPUT) {
-        size_t available_out = buffer_size;
-        uint8_t *next_out = buffer;
-        result = BrotliDecoderDecompressStream(state, &available_in, &next_in,
-                                               &available_out, &next_out,
+        ctx.available_out = buffer_size;
+        ctx.next_out = buffer;
+        result = BrotliDecoderDecompressStream(ctx.decoder,
+                                               &ctx.available_in,
+                                               &ctx.next_in,
+                                               &ctx.available_out,
+                                               &ctx.next_out,
                                                0);
-        size_t used_out = buffer_size - available_out;
+        size_t used_out = (size_t)(buffer_size - ctx.available_out);
         if (used_out != 0) {
             smart_string_appendl(&out, buffer, used_out);
         }
     }
 
-    BrotliDecoderDestroyInstance(state);
+    php_brotli_context_close(&ctx);
     efree(buffer);
 
     if (result != BROTLI_DECODER_RESULT_SUCCESS) {
@@ -1453,9 +1469,8 @@ static ZEND_FUNCTION(brotli_uncompress_init)
 
     PHP_BROTLI_CONTEXT_OBJ_INIT_OF_CLASS(php_brotli_uncompress_context_ce);
 
-    if (php_brotli_context_create_decoder(ctx) != SUCCESS) {
-        php_error_docref(NULL, E_WARNING,
-                         "failed to prepare incremental uncompress");
+    if (php_brotli_context_create_decoder_ex(ctx, 1) != SUCCESS) {
+        zval_ptr_dtor(return_value);
         RETURN_FALSE;
     }
 }
