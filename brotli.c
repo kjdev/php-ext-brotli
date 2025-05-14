@@ -883,6 +883,7 @@ php_stream_brotli_opener(
 {
     php_brotli_stream_data *self;
     int level = BROTLI_DEFAULT_QUALITY;
+    zend_string *dict = NULL;
     int compress;
 
     if (strncasecmp(STREAM_NAME, path, sizeof(STREAM_NAME)-1) == 0) {
@@ -912,7 +913,13 @@ php_stream_brotli_opener(
                          context, "brotli", "level"))) {
             level = zval_get_long(tmpzval);
         }
+
+        if (NULL != (tmpzval = php_stream_context_get_option(
+                         context, "brotli", "dict"))) {
+            dict = zval_get_string(tmpzval);
+        }
     }
+
     if (level > BROTLI_MAX_QUALITY) {
         php_error_docref(NULL, E_WARNING,
                          "brotli: set compression level (%d)"
@@ -934,6 +941,9 @@ php_stream_brotli_opener(
                                            options | REPORT_ERRORS, NULL);
     if (!self->stream) {
         efree(self);
+        if (dict) {
+            zend_string_release(dict);
+        }
         return NULL;
     }
 
@@ -941,23 +951,40 @@ php_stream_brotli_opener(
 
     /* File */
     if (compress) {
-        if (php_brotli_context_create_encoder(&self->ctx,
-                                              level, 0, 0) != SUCCESS) {
+        if (php_brotli_context_create_encoder_ex(&self->ctx, level, 0, 0,
+                                                 dict, 0) != SUCCESS) {
             php_error_docref(NULL, E_WARNING,
                              "brotli: failed to prepare compression");
+            php_brotli_context_close(&self->ctx);
             php_stream_close(self->stream);
             efree(self);
+            if (dict) {
+                zend_string_release(dict);
+            }
             return NULL;
+        }
+
+        if (dict) {
+            zend_string_release(dict);
         }
 
         return php_stream_alloc(&php_stream_brotli_write_ops, self, NULL, mode);
     } else {
-        if (php_brotli_context_create_decoder(&self->ctx) != SUCCESS) {
+        if (php_brotli_context_create_decoder_ex(&self->ctx,
+                                                 dict, 0) != SUCCESS) {
             php_error_docref(NULL, E_WARNING,
                              "brotli: failed to prepare decompression");
+            php_brotli_context_close(&self->ctx);
             php_stream_close(self->stream);
             efree(self);
+            if (dict) {
+                zend_string_release(dict);
+            }
             return NULL;
+        }
+
+        if (dict) {
+            zend_string_release(dict);
         }
 
         self->result = BROTLI_DECODER_RESULT_NEEDS_MORE_INPUT;
