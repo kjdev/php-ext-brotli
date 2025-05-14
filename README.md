@@ -44,7 +44,8 @@ extension=brotli.so
 Name                              | Default | Changeable
 --------------------------------- | ------- | ----------
 brotli.output\_compression        | 0       | PHP\_INI\_ALL
-brotli.output\_compression\_level | -1      | PHP\_INI\_ALL
+brotli.output\_compression\_level | 11      | PHP\_INI\_ALL
+brotli.output\_compression\_dict  | ""      | PHP\_INI\_ALL
 
 * brotli.output\_compression _boolean_
 
@@ -58,15 +59,32 @@ brotli.output\_compression\_level | -1      | PHP\_INI\_ALL
 
     Compression level used for transparent output compression.
     Specify a value between 0 to 11.
-    The default value of -1 uses internally defined values (11).
+    The default value of `BROTLI_COMPRESS_LEVEL_DEFAULT` (11).
+
+* brotli.output\_compression\_dict _string_
+
+    Specifies the path to the compressed dictionary file to be
+    used by the output handler.
+
+    > can be used when `BROTLI_DICTIONARY_SUPPORT` is enabled
 
 ## Constant
 
 Name                              | Description
 --------------------------------- | -----------
+BROTLI\_GENERIC                   | Generic compress mode value
+BROTLI\_TEXT                      | Text compress mode value
+BROTLI\_FONT                      | Font compress mode value
 BROTLI\_COMPRESS\_LEVEL\_MIN      | Minimal compress level value
 BROTLI\_COMPRESS\_LEVEL\_MAX      | Maximal compress level value
 BROTLI\_COMPRESS\_LEVEL\_DEFAULT  | Default compress level value
+BROTLI\_PROCESS                   | Incremental process mode value
+BROTLI\_FLUSH                     | Incremental produce mode value
+BROTLI\_FINISH                    | Incremental finalize mode value
+BROTLI\_DICTIONARY\_SUPPORT       | Dictionary support value
+
+> `BROTLI_DICTIONARY_SUPPORT` must be enabled
+> with brotli library version 1.1.0 or higher
 
 ## Function
 
@@ -82,7 +100,9 @@ BROTLI\_COMPRESS\_LEVEL\_DEFAULT  | Default compress level value
 
 #### Description
 
-string **brotli\_compress** ( string _$data_ [, int _$level_ = BROTLI\_COMPRESS\_LEVEL\_DEFAULT, int _$mode_ = BROTLI\_GENERIC ] )
+``` php
+brotli_compress ( string $data, int $level = BROTLI_COMPRESS_LEVEL_DEFAULT, int $mode = BROTLI_GENERIC, string|null $dict = null ): string|false
+```
 
 This function compress a string.
 
@@ -95,12 +115,18 @@ This function compress a string.
 * _level_
 
   The higher the level, the slower the compression.
-  (Defaults to `BROTLI\_COMPRESS\_LEVEL\_DEFAULT`)
+  (Defaults to `BROTLI_COMPRESS_LEVEL_DEFAULT`)
 
 * _mode_
 
   The compression mode can be `BROTLI_GENERIC` (default),
   `BROTLI_TEXT` (for UTF-8 format text input) or `BROTLI_FONT` (for WOFF 2.0).
+
+* _dict_
+
+  The dictionary data.
+
+  > can be used when `BROTLI_DICTIONARY_SUPPORT` is enabled
 
 #### Return Values
 
@@ -111,7 +137,9 @@ The compressed string or FALSE if an error occurred.
 
 #### Description
 
-string **brotli\_uncompress** ( string _$data_ [, int _$length_ = 0 ] )
+``` php
+brotli_uncompress ( string $data, int $length = 0, string|null $dict = null ): string|false
+```
 
 This function uncompress a compressed string.
 
@@ -125,6 +153,12 @@ This function uncompress a compressed string.
 
   The maximum length of data to decode.
 
+* _dict_
+
+  The dictionary data.
+
+  > can be used when `BROTLI_DICTIONARY_SUPPORT` is enabled
+
 #### Return Values
 
 The original uncompressed data or FALSE on error.
@@ -134,7 +168,9 @@ The original uncompressed data or FALSE on error.
 
 #### Description
 
-Brotli\Compress\Context **brotli\_compress\_init** ( [ int _$level_ = BROTLI\_COMPRESS\_LEVEL\_DEFAULT, int _$mode_ = BROTLI\_GENERIC ] )
+``` php
+brotli_compress_init ( int $level = BROTLI_COMPRESS_LEVEL_DEFAULT, int $mode = BROTLI_GENERIC, string|null $dict = null ): Brotli\Compress\Context|false
+```
 
 Initialize an incremental compress context.
 
@@ -143,12 +179,18 @@ Initialize an incremental compress context.
 * _level_
 
   The higher the level, the slower the compression.
-  (Defaults to `BROTLI\_COMPRESS\_LEVEL\_DEFAULT`)
+  (Defaults to `BROTLI_COMPRESS_LEVEL_DEFAULT`)
 
 * _mode_
 
   The compression mode can be `BROTLI_GENERIC` (default),
   `BROTLI_TEXT` (for UTF-8 format text input) or `BROTLI_FONT` (for WOFF 2.0).
+
+* _dict_
+
+  The dictionary data.
+
+  > can be used when `BROTLI_DICTIONARY_SUPPORT` is enabled
 
 #### Return Values
 
@@ -160,7 +202,9 @@ or FALSE on failure.
 
 #### Description
 
-string **brotli\_compress\_add** ( Brotli\Compress\Context _$context_, string _$data_ [, _$mode_ = BROTLI\_FLUSH ] )
+``` php
+brotli_compress_add ( Brotli\Compress\Context $context, string $data, $mode = BROTLI\_FLUSH ): string|false
+```
 
 Incrementally compress data.
 
@@ -189,9 +233,19 @@ Returns a chunk of compressed data, or FALSE on failure.
 
 #### Description
 
-Brotli\UnCompress\Context **brotli\_uncompress\_init** ( void )
+``` php
+brotli_uncompress_init ( string|null $dict = null ): Brotli\UnCompress\Context|false
+```
 
 Initialize an incremental uncompress context.
+
+#### Parameters
+
+* _dict_
+
+  The dictionary data.
+
+  > can be used when `BROTLI_DICTIONARY_SUPPORT` is enabled
 
 #### Return Values
 
@@ -203,7 +257,9 @@ or FALSE on failure.
 
 #### Description
 
-string **brotli\_uncompress\_add** ( Brotli\UnCompress\Context _$context_, string _$data_ [, _$mode_ = BROTLI\_FLUSH ] )
+``` php
+brotli_uncompress_add ( Brotli\UnCompress\Context $context, string $data, $mode = BROTLI\_FLUSH ): string|false
+```
 
 Incrementally uncompress data.
 
@@ -229,15 +285,15 @@ Returns a chunk of uncompressed data, or FALSE on failure.
 
 ## Namespace
 
-```
+``` php
 Namespace Brotli;
 
-function compress( $data [, $level = \\BROTLI\_COMPRESS\_LEVEL\_DEFAULT, $mode = \\BROTLI\_GENERIC ] )
-function uncompress( $data [, $length = 0 ] )
-function compress\_init( [ $level = \\BROTLI\_COMPRESS\_LEVEL\_DEFAULT, $mode = \\BROTLI\_GENERIC ] )
-function compress\_add( \\Brotli\\Compress\\Context $context, string $data [, $mode = \\BROTLI\_FLUSH] )
-function uncompress\_init()
-function uncompress\_add( \\Brotli\\UnCompress\\Context $context, string $data [, $mode = \\BROTLI\_FLUSH] )
+function compress( string $data, int $level = \BROTLI_COMPRESS_LEVEL_DEFAULT, int $mode = \BROTLI_GENERIC, string|null $dict = null ): string|false {}
+function uncompress( string $data, int $length = 0, string|null $dict = null ): string|false {}
+function compress_init( int $level = \BROTLI_COMPRESS_LEVEL_DEFAULT, int $mode = \BROTLI_GENERIC, string|null $dict = null ): \Brotli\Compress\Context|false {}
+function compress_add( \Brotli\Compress\Context $context, string $data, $mode = \BROTLI_FLUSH ): string|false {}
+function uncompress_init(string|null $dict = null): \Brotli\UnCompress\Context|false {}
+function uncompress_add( \Brotli\UnCompress\Context $context, string $data, int $mode = \BROTLI_FLUSH ): string|false {}
 ```
 
 alias functions..
@@ -281,8 +337,8 @@ $data = \Brotli\compress('test');
 ### Streams
 
 ``` php
-file_put_contents("compress.brotli:///patch/to/data.br", $data);
-readfile("compress.brotli:///patch/to/data.br");
+file_put_contents("compress.brotli:///path/to/data.br", $data);
+readfile("compress.brotli:///path/to/data.br");
 ```
 
 ### Incrementally
@@ -306,3 +362,50 @@ $uncompressed .= brotli_uncompress_add($resource, '', BROTLI_FINISH);
 
 echo $uncompressed, PHP_EOL; // Hello, World!
 ```
+
+### Dictionary
+
+```php
+$data = '..';
+
+// load dictionary data
+$dict = file_get_contents('data.dict');
+
+// basic
+$compressed = brotli_compress(data: $data, dict: $dict);
+$uncompressed = brotli_uncompress(data: $compressed, dict: $dict);
+
+// incrementally
+$context = brotli_compress_init(dict: $dict);
+$compressed = '';
+$compressed .= brotli_compress_add($context, $data);
+$compressed .= brotli_compress_add($context, '', BROTLI_FINISH);
+
+$context = brotli_uncompress_init(dict: $dict);
+$uncompressed = '';
+$uncompressed .= brotli_uncompress_add($context, $compressed, BROTLI_FLUSH);
+$uncompressed .= brotli_uncompress_add($context, '', BROTLI_FINISH);
+
+// streams
+$ctx = stream_context_create([
+    'brotli' => [
+        'dict' => $dict,
+    ],
+]);
+
+file_put_contents('compress.brotli:///path/to/data.br', $data, 0, $ctx);
+
+$uncompressed = file_get_contents('compress.brotli:///path/to/data.br', false, $ctx);
+
+// output handler
+ini_set('brotli.output_compression_dict', __DIR__ . '/data.dict');
+ini_set('brotli.output_compression', 'On');
+// OR: ob_start('ob_brotli_handler');
+echo ...;
+```
+
+> Experimental: [Compression Dictionary Transport](https://developer.mozilla.org/en-US/docs/Web/HTTP/Guides/Compression_dictionary_transport) support
+>
+> must be specified headers.
+> - `Accept-Encoding: dcb`
+> - `Available-Dictionary: :<base64-hash>:`
