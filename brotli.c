@@ -920,22 +920,6 @@ php_stream_brotli_opener(
         }
     }
 
-    if (level > BROTLI_MAX_QUALITY) {
-        php_error_docref(NULL, E_WARNING,
-                         "brotli: set compression level (%d)"
-                         " to BROTLI_COMPRESS_LEVEL_MAX:"
-                         " must be within %d..%d",
-                         level, BROTLI_MIN_QUALITY, BROTLI_MAX_QUALITY);
-        level = BROTLI_MAX_QUALITY;
-    } else if (level <  BROTLI_MIN_QUALITY) {
-        php_error_docref(NULL, E_WARNING,
-                         "brotli: set compression level (%d)"
-                         " to BROTLI_COMPRESS_LEVEL_DEFAULT:"
-                         " must be within %d..%d",
-                         level, BROTLI_MIN_QUALITY, BROTLI_MAX_QUALITY);
-        level = BROTLI_DEFAULT_QUALITY;
-    }
-
     self = ecalloc(sizeof(*self), 1);
     self->stream = php_stream_open_wrapper(path, mode,
                                            options | REPORT_ERRORS, NULL);
@@ -991,7 +975,6 @@ php_stream_brotli_opener(
 
         return php_stream_alloc(&php_stream_brotli_read_ops, self, NULL, mode);
     }
-    return NULL;
 }
 
 static php_stream_wrapper_ops brotli_stream_wops = {
