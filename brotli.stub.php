@@ -66,24 +66,24 @@ namespace {
   /**
    * @note dict parameter can be used when BROTLI_DICTIONARY_SUPPORT is enabled
    */
-  function brotli_compress(string $data, int $level = BROTLI_COMPRESS_LEVEL_DEFAULT, int $mode = BROTLI_GENERIC, string|null $dict = null): string|false {}
+  function brotli_compress(string $data, int $level = BROTLI_COMPRESS_LEVEL_DEFAULT, int $mode = BROTLI_GENERIC, ?string $dict = null): string|false {}
 
   /**
    * @note dict parameter can be used when BROTLI_DICTIONARY_SUPPORT is enabled
    */
-  function brotli_uncompress(string $data, int $length = 0, string|null $dict = null): string|false {}
+  function brotli_uncompress(string $data, int $length = 0, ?string $dict = null): string|false {}
 
   /**
    * @note dict parameter can be used when BROTLI_DICTIONARY_SUPPORT is enabled
    */
-  function brotli_compress_init(int $level = BROTLI_COMPRESS_LEVEL_DEFAULT, int $mode = BROTLI_GENERIC, string|null $dict = null): Brotli\Compress\Context|false {}
+  function brotli_compress_init(int $level = BROTLI_COMPRESS_LEVEL_DEFAULT, int $mode = BROTLI_GENERIC, ?string $dict = null): Brotli\Compress\Context|false {}
 
   function brotli_compress_add(Brotli\Compress\Context $context, string $data, int $mode = BROTLI_FLUSH): string|false {}
 
   /**
    * @note dict parameter can be used when BROTLI_DICTIONARY_SUPPORT is enabled
    */
-  function brotli_uncompress_init(string|null $dict = null): Brotli\UnCompress\Context|false {}
+  function brotli_uncompress_init(?string $dict = null): Brotli\UnCompress\Context|false {}
 
   function brotli_uncompress_add(Brotli\UnCompress\Context $context, string $data, int $mode = BROTLI_FLUSH): string|false {}
 }
@@ -93,12 +93,12 @@ namespace Brotli {
   /**
    * @note dict parameter can be used when BROTLI_DICTIONARY_SUPPORT is enabled
    */
-  function compress(string $data, int $level = \BROTLI_COMPRESS_LEVEL_DEFAULT, int $mode = \BROTLI_GENERIC, string|null $dict = null): string|false {}
+  function compress(string $data, int $level = \BROTLI_COMPRESS_LEVEL_DEFAULT, int $mode = \BROTLI_GENERIC, ?string $dict = null): string|false {}
 
   /**
    * @note dict parameter can be used when BROTLI_DICTIONARY_SUPPORT is enabled
    */
-  function uncompress(string $data, int $length = 0, string|null $dict = null): string|false {}
+  function uncompress(string $data, int $length = 0, ?string $dict = null): string|false {}
 
   /**
    * @note dict parameter can be used when BROTLI_DICTIONARY_SUPPORT is enabled
@@ -110,7 +110,7 @@ namespace Brotli {
   /**
    * @note dict parameter can be used when BROTLI_DICTIONARY_SUPPORT is enabled
    */
-  function uncompress_init(string|null $dict = null): UnCompress\Context|false {}
+  function uncompress_init(?string $dict = null): UnCompress\Context|false {}
 
   function uncompress_add(UnCompress\Context $context, string $data, int $mode = \BROTLI_FLUSH): string|false {}
 
