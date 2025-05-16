@@ -5,6 +5,10 @@
 #include <php.h>
 #include <SAPI.h>
 #include <php_ini.h>
+#include <ext/hash/php_hash.h>
+#include <ext/hash/php_hash_sha.h>
+#include <ext/standard/base64.h>
+#include <ext/standard/file.h>
 #include <ext/standard/info.h>
 #include <ext/standard/php_smart_string.h>
 #if defined(HAVE_APCU_SUPPORT)
@@ -37,11 +41,13 @@ ZEND_BEGIN_ARG_WITH_RETURN_TYPE_MASK_EX(arginfo_brotli_compress, 0, 1, MAY_BE_ST
     ZEND_ARG_TYPE_INFO(0, data, IS_STRING, 0)
     ZEND_ARG_TYPE_INFO_WITH_DEFAULT_VALUE(0, level, IS_LONG, 0, "BROTLI_COMPRESS_LEVEL_DEFAULT")
     ZEND_ARG_TYPE_INFO_WITH_DEFAULT_VALUE(0, mode, IS_LONG, 0, "BROTLI_GENERIC")
+    ZEND_ARG_TYPE_INFO_WITH_DEFAULT_VALUE(0, dict, IS_STRING, 1, "null")
 #else
 ZEND_BEGIN_ARG_INFO_EX(arginfo_brotli_compress, 0, 0, 1)
     ZEND_ARG_INFO(0, data)
     ZEND_ARG_INFO(0, level)
     ZEND_ARG_INFO(0, mode)
+    ZEND_ARG_INFO(0, dict)
 #endif
 ZEND_END_ARG_INFO()
 
@@ -49,10 +55,14 @@ ZEND_END_ARG_INFO()
 ZEND_BEGIN_ARG_WITH_RETURN_TYPE_MASK_EX(arginfo_brotli_uncompress, 0, 1, MAY_BE_STRING|MAY_BE_FALSE)
     ZEND_ARG_TYPE_INFO(0, data, IS_STRING, 0)
     ZEND_ARG_TYPE_INFO_WITH_DEFAULT_VALUE(0, length, IS_LONG, 0, "0")
+    ZEND_ARG_TYPE_INFO_WITH_DEFAULT_VALUE(0, dict, IS_STRING, 1, "null")
 #else
 ZEND_BEGIN_ARG_INFO_EX(arginfo_brotli_uncompress, 0, 0, 1)
     ZEND_ARG_INFO(0, data)
     ZEND_ARG_INFO(0, length)
+#if defined(USE_BROTLI_DICTIONARY)
+    ZEND_ARG_INFO(0, dict)
+#endif
 #endif
 ZEND_END_ARG_INFO()
 
@@ -60,10 +70,14 @@ ZEND_END_ARG_INFO()
 ZEND_BEGIN_ARG_WITH_RETURN_OBJ_TYPE_MASK_EX(arginfo_brotli_compress_init, 0, 0, Brotli\\Compress\\Context, MAY_BE_FALSE)
     ZEND_ARG_TYPE_INFO_WITH_DEFAULT_VALUE(0, level, IS_LONG, 0, "BROTLI_COMPRESS_LEVEL_DEFAULT")
     ZEND_ARG_TYPE_INFO_WITH_DEFAULT_VALUE(0, mode, IS_LONG, 0, "BROTLI_GENERIC")
+    ZEND_ARG_TYPE_INFO_WITH_DEFAULT_VALUE(0, dict, IS_STRING, 1, "null")
 #else
 ZEND_BEGIN_ARG_INFO_EX(arginfo_brotli_compress_init, 0, 0, 0)
     ZEND_ARG_INFO(0, level)
     ZEND_ARG_INFO(0, mode)
+#if defined(USE_BROTLI_DICTIONARY)
+    ZEND_ARG_INFO(0, dict)
+#endif
 #endif
 ZEND_END_ARG_INFO()
 
@@ -82,8 +96,10 @@ ZEND_END_ARG_INFO()
 
 #if PHP_VERSION_ID >= 80000
 ZEND_BEGIN_ARG_WITH_RETURN_OBJ_TYPE_MASK_EX(arginfo_brotli_uncompress_init, 0, 0, Brotli\\UnCompress\\Context, MAY_BE_FALSE)
+    ZEND_ARG_TYPE_INFO_WITH_DEFAULT_VALUE(0, dict, IS_STRING, 1, "null")
 #else
 ZEND_BEGIN_ARG_INFO_EX(arginfo_brotli_uncompress_init, 0, 0, 0)
+    ZEND_ARG_INFO(0, dict)
 #endif
 ZEND_END_ARG_INFO()
 
@@ -99,6 +115,10 @@ ZEND_BEGIN_ARG_INFO_EX(arginfo_brotli_uncompress_add, 0, 0, 2)
     ZEND_ARG_INFO(0, mode)
 #endif
 ZEND_END_ARG_INFO()
+
+#ifndef Z_PARAM_STR_OR_NULL
+#define Z_PARAM_STR_OR_NULL(dest) Z_PARAM_STR_EX(dest, 1, 0)
+#endif
 
 #if defined(HAVE_APCU_SUPPORT)
 static int APC_SERIALIZER_NAME(brotli)(APC_SERIALIZER_ARGS);
@@ -132,6 +152,10 @@ static const size_t PHP_BROTLI_BUFFER_SIZE = 1 << 19;
 struct _php_brotli_context {
     BrotliEncoderState *encoder;
     BrotliDecoderState *decoder;
+#if defined(USE_BROTLI_DICTIONARY)
+    BrotliEncoderPreparedDictionary *dictionary;
+#endif
+    zend_uchar dict_digest[32];
     size_t available_in;
     const uint8_t *next_in;
     size_t available_out;
@@ -144,6 +168,10 @@ static void php_brotli_context_init(php_brotli_context *ctx)
 {
     ctx->encoder = NULL;
     ctx->decoder = NULL;
+#if defined(USE_BROTLI_DICTIONARY)
+    ctx->dictionary = NULL;
+#endif
+    memset(ctx->dict_digest, 0, sizeof(ctx->dict_digest));
     ctx->available_in = 0;
     ctx->next_in = NULL;
     ctx->available_out = 0;
@@ -152,8 +180,11 @@ static void php_brotli_context_init(php_brotli_context *ctx)
 }
 
 static int php_brotli_context_create_encoder_ex(php_brotli_context *ctx,
-                                                long level, int lgwin,
-                                                long mode, int fail)
+                                                long level,
+                                                int lgwin,
+                                                long mode,
+                                                zend_string *dict,
+                                                int fail)
 {
     ctx->encoder = BrotliEncoderCreateInstance(NULL, NULL, NULL);
     if (!ctx->encoder) {
@@ -204,13 +235,37 @@ static int php_brotli_context_create_encoder_ex(php_brotli_context *ctx,
         return FAILURE;
     }
 
+    if (dict) {
+#if defined(USE_BROTLI_DICTIONARY)
+        ctx->dictionary
+            = BrotliEncoderPrepareDictionary(BROTLI_SHARED_DICTIONARY_RAW,
+                                             ZSTR_LEN(dict), ZSTR_VAL(dict),
+                                             BROTLI_MAX_QUALITY,
+                                             NULL, NULL, NULL);
+        if (ctx->dictionary == NULL
+            || !BrotliEncoderAttachPreparedDictionary(ctx->encoder,
+                                                      ctx->dictionary)) {
+            php_error_docref(NULL, E_WARNING,
+                             "%sfailed to set compression dictionary",
+                             (fail ? "" : "brotli: "));
+            return FAILURE;
+        }
+#else
+        php_error_docref(NULL, E_WARNING,
+                         "%sfailed to not supported compression dictionary",
+                         (fail ? "" : "brotli: "));
+        return FAILURE;
+#endif
+    }
+
     return SUCCESS;
 }
 
 #define php_brotli_context_create_encoder(ctx, level, lgwin, mode) \
-    php_brotli_context_create_encoder_ex(ctx, level, lgwin, mode, 0)
+    php_brotli_context_create_encoder_ex(ctx, level, lgwin, mode, NULL, 0)
 
 static int php_brotli_context_create_decoder_ex(php_brotli_context *ctx,
+                                                zend_string *dict,
                                                 int fail)
 {
     ctx->decoder = BrotliDecoderCreateInstance(NULL, NULL, NULL);
@@ -229,11 +284,29 @@ static int php_brotli_context_create_decoder_ex(php_brotli_context *ctx,
         return FAILURE;
     }
 
+    if (dict) {
+#if defined(USE_BROTLI_DICTIONARY)
+        if (!BrotliDecoderAttachDictionary(ctx->decoder,
+                                           BROTLI_SHARED_DICTIONARY_RAW,
+                                           ZSTR_LEN(dict), ZSTR_VAL(dict))) {
+            php_error_docref(NULL, E_WARNING,
+                             "%sfailed to set uncompression dictionary",
+                             (fail ? "" : "brotli: "));
+            return FAILURE;
+        }
+#else
+        php_error_docref(NULL, E_WARNING,
+                         "%sfailed to not supported uncompression dictionary",
+                         (fail ? "" : "brotli: "));
+        return FAILURE;
+#endif
+    }
+
     return SUCCESS;
 }
 
 #define php_brotli_context_create_decoder(ctx) \
-    php_brotli_context_create_decoder_ex(ctx, 0)
+    php_brotli_context_create_decoder_ex(ctx, NULL, 0)
 
 static void php_brotli_context_close(php_brotli_context *ctx)
 {
@@ -245,6 +318,12 @@ static void php_brotli_context_close(php_brotli_context *ctx)
         BrotliDecoderDestroyInstance(ctx->decoder);
         ctx->decoder = NULL;
     }
+#if defined(USE_BROTLI_DICTIONARY)
+    if (ctx->dictionary) {
+        BrotliEncoderDestroyPreparedDictionary(ctx->dictionary);
+        ctx->dictionary = NULL;
+    }
+#endif
 
     if (ctx->output) {
         efree(ctx->output);
@@ -258,6 +337,9 @@ static void php_brotli_context_close(php_brotli_context *ctx)
 }
 
 #define PHP_BROTLI_OUTPUT_HANDLER "ob_brotli_handler"
+
+#define PHP_BROTLI_ENCODING_BR (1 << 0)
+#define PHP_BROTLI_ENCODING_DCB (1 << 1)
 
 static int php_brotli_output_encoding(void)
 {
@@ -275,7 +357,10 @@ static int php_brotli_output_encoding(void)
                     sizeof("HTTP_ACCEPT_ENCODING") - 1))) {
             convert_to_string(enc);
             if (strstr(Z_STRVAL_P(enc), "br")) {
-                BROTLI_G(compression_coding) = 1;
+                BROTLI_G(compression_coding) = PHP_BROTLI_ENCODING_BR;
+            }
+            if (strstr(Z_STRVAL_P(enc), "dcb")) {
+                BROTLI_G(compression_coding) |= PHP_BROTLI_ENCODING_DCB;
             }
         }
     }
@@ -283,10 +368,109 @@ static int php_brotli_output_encoding(void)
     return BROTLI_G(compression_coding);
 }
 
+static zend_string *php_brotli_output_handler_load_dict(php_brotli_context *ctx)
+{
+    char *file = BROTLI_G(output_compression_dict);
+    if (!file || strlen(file) == 0) {
+        return NULL;
+    }
+
+    php_stream *stream = NULL;
+    zval *zcontext = NULL;
+    php_stream_context *context = NULL;
+    zend_long maxlen = (ssize_t) PHP_STREAM_COPY_ALL;
+
+    context = php_stream_context_from_zval(zcontext, 0);
+    stream = php_stream_open_wrapper_ex(file, "rb",
+                                        REPORT_ERRORS,
+                                        NULL, context);
+    if (!stream) {
+        return NULL;
+    }
+
+    if (php_stream_is(stream, PHP_STREAM_IS_STDIO)) {
+        php_stream_set_option(stream, PHP_STREAM_OPTION_READ_BUFFER,
+                              PHP_STREAM_BUFFER_NONE, NULL);
+    }
+
+    zend_string *dict = php_stream_copy_to_mem(stream, maxlen, 0);
+
+    php_stream_close(stream);
+
+    if (!dict) {
+        return NULL;
+    }
+
+    if (BROTLI_G(compression_coding) & PHP_BROTLI_ENCODING_DCB) {
+        zval *available;
+        if ((Z_TYPE(PG(http_globals)[TRACK_VARS_SERVER]) == IS_ARRAY
+             || zend_is_auto_global_str(ZEND_STRL("_SERVER")))
+            && (available = zend_hash_str_find(
+                    Z_ARRVAL(PG(http_globals)[TRACK_VARS_SERVER]),
+                    "HTTP_AVAILABLE_DICTIONARY",
+                    sizeof("HTTP_AVAILABLE_DICTIONARY") - 1))) {
+            convert_to_string(available);
+
+            PHP_SHA256_CTX context;
+            PHP_SHA256Init(&context);
+            PHP_SHA256Update(&context, ZSTR_VAL(dict), ZSTR_LEN(dict));
+            PHP_SHA256Final(ctx->dict_digest, &context);
+
+            zend_string *b64;
+            b64 = php_base64_encode(ctx->dict_digest, sizeof(ctx->dict_digest));
+            if (b64) {
+                if (Z_STRLEN_P(available) <= ZSTR_LEN(b64)
+                    || memcmp(ZSTR_VAL(b64),
+                              Z_STRVAL_P(available) + 1, ZSTR_LEN(b64))) {
+                    php_error_docref(NULL, E_NOTICE,
+                                     "brotli: invalid available-dictionary: "
+                                     "request(%s) != actual(%s)",
+                                     Z_STRVAL_P(available), ZSTR_VAL(b64));
+                    BROTLI_G(compression_coding) &= ~PHP_BROTLI_ENCODING_DCB;
+                    zend_string_free(dict);
+                    dict = NULL;
+                }
+                zend_string_free(b64);
+            }
+        } else {
+            php_error_docref(NULL, E_NOTICE,
+                             "brotli: not found available-dictionary");
+            BROTLI_G(compression_coding) &= ~PHP_BROTLI_ENCODING_DCB;
+            zend_string_free(dict);
+            dict = NULL;
+        }
+    }
+
+    return dict;
+}
+
+static int php_brotli_output_handler_context_start(php_brotli_context *ctx)
+{
+    long level = BROTLI_G(output_compression_level);
+    zend_string *dict = php_brotli_output_handler_load_dict(ctx);
+    if (!BROTLI_G(compression_coding)) {
+        if (dict) {
+            zend_string_release(dict);
+        }
+        return FAILURE;
+    }
+
+    int result = php_brotli_context_create_encoder_ex(ctx,
+                                                      level,
+                                                      BROTLI_DEFAULT_WINDOW,
+                                                      BROTLI_MODE_GENERIC,
+                                                      dict,
+                                                      0);
+    if (dict) {
+        zend_string_release(dict);
+    }
+
+    return result;
+}
+
 static int php_brotli_output_handler(void **handler_context,
                                      php_output_context *output_context)
 {
-    long level = BROTLI_DEFAULT_QUALITY;
     php_brotli_context *ctx = *(php_brotli_context **)handler_context;
 
     if (!php_brotli_output_encoding()) {
@@ -294,8 +478,14 @@ static int php_brotli_output_handler(void **handler_context,
             &&  (output_context->op
                  != (PHP_OUTPUT_HANDLER_START
                      |PHP_OUTPUT_HANDLER_CLEAN|PHP_OUTPUT_HANDLER_FINAL))) {
-            sapi_add_header_ex(ZEND_STRL("Vary: Accept-Encoding"),
-                               1, 0);
+            if (BROTLI_G(compression_coding) & PHP_BROTLI_ENCODING_DCB) {
+                sapi_add_header_ex(ZEND_STRL("Vary: Accept-Encoding, "
+                                             "Available-Dictionary"),
+                                   1, 0);
+            } else {
+                sapi_add_header_ex(ZEND_STRL("Vary: Accept-Encoding"),
+                                   1, 0);
+            }
         }
         return FAILURE;
     }
@@ -304,13 +494,8 @@ static int php_brotli_output_handler(void **handler_context,
         return FAILURE;
     }
 
-    level = BROTLI_G(output_compression_level);
-    if (level < BROTLI_MIN_QUALITY || level > BROTLI_MAX_QUALITY) {
-        level = BROTLI_DEFAULT_QUALITY;
-    }
-
     if (output_context->op & PHP_OUTPUT_HANDLER_START) {
-        if (php_brotli_context_create_encoder(ctx, level, 0, 0) != SUCCESS) {
+        if (php_brotli_output_handler_context_start(ctx) != SUCCESS) {
             return FAILURE;
         }
     }
@@ -358,21 +543,38 @@ static int php_brotli_output_handler(void **handler_context,
         }
 
         if (output_context->op & PHP_OUTPUT_HANDLER_FINAL) {
+            uint8_t *data;
             size_t size = (size_t)(ctx->next_out - ctx->output);
 
-            uint8_t *data = (uint8_t *)emalloc(size);
-            memcpy(data, ctx->output, size);
+            if (BROTLI_G(compression_coding) & PHP_BROTLI_ENCODING_DCB) {
+                // \xFF + DCB + dictionary-sha256 + compress-data
+                data = (uint8_t *)emalloc(size + 36);
+                memcpy(data, "\xff", 1);
+                memcpy(data + 1, "DCB", 3);
+                memcpy(data + 4, ctx->dict_digest, 32);
+                memcpy(data + 36, ctx->output, size);
+                size += 36;
+
+                sapi_add_header_ex(ZEND_STRL("Content-Encoding: dcb"),
+                                   1, 1);
+                sapi_add_header_ex(ZEND_STRL("Vary: Accept-Encoding, "
+                                             "Available-Dictionary"),
+                                   1, 0);
+            } else {
+                data = (uint8_t *)emalloc(size);
+                memcpy(data, ctx->output, size);
+
+                sapi_add_header_ex(ZEND_STRL("Content-Encoding: br"),
+                                   1, 1);
+                sapi_add_header_ex(ZEND_STRL("Vary: Accept-Encoding"),
+                                   1, 0);
+            }
 
             output_context->out.data = data;
             output_context->out.used = size;
             output_context->out.free = 1;
 
             php_brotli_context_close(ctx);
-
-            sapi_add_header_ex(ZEND_STRL("Content-Encoding: br"),
-                               1, 1);
-            sapi_add_header_ex(ZEND_STRL("Vary: Accept-Encoding"),
-                               1, 0);
         }
     } else {
         php_brotli_context_close(ctx);
@@ -382,8 +584,7 @@ static int php_brotli_output_handler(void **handler_context,
             return SUCCESS;
         } else {
             // restart
-            if (php_brotli_context_create_encoder(ctx,
-                                                  level, 0, 0) != SUCCESS) {
+            if (php_brotli_output_handler_context_start(ctx) != SUCCESS) {
                 return FAILURE;
             }
         }
@@ -541,13 +742,20 @@ static int php_brotli_output_conflict(const char *handler_name, size_t handler_n
     return SUCCESS;
 }
 
+#define STRINGIFY(n) #n
+#define TOSTRING(n) STRINGIFY(n)
+
 PHP_INI_BEGIN()
   STD_PHP_INI_BOOLEAN("brotli.output_compression", "0",
                       PHP_INI_ALL, OnUpdate_brotli_output_compression,
                       output_compression_default,
                       zend_brotli_globals, brotli_globals)
-  STD_PHP_INI_ENTRY("brotli.output_compression_level", "-1",
+  STD_PHP_INI_ENTRY("brotli.output_compression_level",
+                    TOSTRING(BROTLI_DEFAULT_QUALITY),
                     PHP_INI_ALL, OnUpdateLong, output_compression_level,
+                    zend_brotli_globals, brotli_globals)
+  STD_PHP_INI_ENTRY("brotli.output_compression_dict", "",
+                    PHP_INI_ALL, OnUpdateString, output_compression_dict,
                     zend_brotli_globals, brotli_globals)
 PHP_INI_END()
 
@@ -810,6 +1018,7 @@ php_stream_brotli_opener(
 {
     php_brotli_stream_data *self;
     int level = BROTLI_DEFAULT_QUALITY;
+    zend_string *dict = NULL;
     int compress;
 
     if (strncasecmp(STREAM_NAME, path, sizeof(STREAM_NAME)-1) == 0) {
@@ -839,21 +1048,11 @@ php_stream_brotli_opener(
                          context, "brotli", "level"))) {
             level = zval_get_long(tmpzval);
         }
-    }
-    if (level > BROTLI_MAX_QUALITY) {
-        php_error_docref(NULL, E_WARNING,
-                         "brotli: set compression level (%d)"
-                         " to BROTLI_COMPRESS_LEVEL_MAX:"
-                         " must be within %d..%d",
-                         level, BROTLI_MIN_QUALITY, BROTLI_MAX_QUALITY);
-        level = BROTLI_MAX_QUALITY;
-    } else if (level <  BROTLI_MIN_QUALITY) {
-        php_error_docref(NULL, E_WARNING,
-                         "brotli: set compression level (%d)"
-                         " to BROTLI_COMPRESS_LEVEL_DEFAULT:"
-                         " must be within %d..%d",
-                         level, BROTLI_MIN_QUALITY, BROTLI_MAX_QUALITY);
-        level = BROTLI_DEFAULT_QUALITY;
+
+        if (NULL != (tmpzval = php_stream_context_get_option(
+                         context, "brotli", "dict"))) {
+            dict = zval_get_string(tmpzval);
+        }
     }
 
     self = ecalloc(sizeof(*self), 1);
@@ -861,6 +1060,9 @@ php_stream_brotli_opener(
                                            options | REPORT_ERRORS, NULL);
     if (!self->stream) {
         efree(self);
+        if (dict) {
+            zend_string_release(dict);
+        }
         return NULL;
     }
 
@@ -868,30 +1070,46 @@ php_stream_brotli_opener(
 
     /* File */
     if (compress) {
-        if (php_brotli_context_create_encoder(&self->ctx,
-                                              level, 0, 0) != SUCCESS) {
+        if (php_brotli_context_create_encoder_ex(&self->ctx, level, 0, 0,
+                                                 dict, 0) != SUCCESS) {
             php_error_docref(NULL, E_WARNING,
                              "brotli: failed to prepare compression");
+            php_brotli_context_close(&self->ctx);
             php_stream_close(self->stream);
             efree(self);
+            if (dict) {
+                zend_string_release(dict);
+            }
             return NULL;
+        }
+
+        if (dict) {
+            zend_string_release(dict);
         }
 
         return php_stream_alloc(&php_stream_brotli_write_ops, self, NULL, mode);
     } else {
-        if (php_brotli_context_create_decoder(&self->ctx) != SUCCESS) {
+        if (php_brotli_context_create_decoder_ex(&self->ctx,
+                                                 dict, 0) != SUCCESS) {
             php_error_docref(NULL, E_WARNING,
                              "brotli: failed to prepare decompression");
+            php_brotli_context_close(&self->ctx);
             php_stream_close(self->stream);
             efree(self);
+            if (dict) {
+                zend_string_release(dict);
+            }
             return NULL;
+        }
+
+        if (dict) {
+            zend_string_release(dict);
         }
 
         self->result = BROTLI_DECODER_RESULT_NEEDS_MORE_INPUT;
 
         return php_stream_alloc(&php_stream_brotli_read_ops, self, NULL, mode);
     }
-    return NULL;
 }
 
 static php_stream_wrapper_ops brotli_stream_wops = {
@@ -1063,6 +1281,14 @@ ZEND_MINIT_FUNCTION(brotli)
     REGISTER_LONG_CONSTANT("BROTLI_FINISH", BROTLI_OPERATION_FINISH,
                            CONST_CS | CONST_PERSISTENT);
 
+#if defined(USE_BROTLI_DICTIONARY)
+    REGISTER_BOOL_CONSTANT("BROTLI_DICTIONARY_SUPPORT", 1,
+                           CONST_CS | CONST_PERSISTENT);
+#else
+    REGISTER_BOOL_CONSTANT("BROTLI_DICTIONARY_SUPPORT", 0,
+                           CONST_CS | CONST_PERSISTENT);
+#endif
+
     php_output_handler_alias_register(ZEND_STRL(PHP_BROTLI_OUTPUT_HANDLER),
                                       php_brotli_output_handler_init);
     php_output_handler_conflict_register(ZEND_STRL(PHP_BROTLI_OUTPUT_HANDLER),
@@ -1176,6 +1402,11 @@ ZEND_MINFO_FUNCTION(brotli)
              version >> 24, (version >> 12) & 0xfff, version & 0xfff);
     php_info_print_table_row(2, "Library Version", buffer);
 #endif
+#if defined(USE_BROTLI_DICTIONARY)
+    php_info_print_table_row(2, "Dictionary support", "enabled");
+#else
+    php_info_print_table_row(2, "Dictionary support", "disabled");
+#endif
 #if defined(HAVE_APCU_SUPPORT)
     php_info_print_table_row(2, "APCu serializer ABI", APC_SERIALIZER_ABI);
 #endif
@@ -1222,18 +1453,20 @@ static ZEND_FUNCTION(brotli_compress)
 
     zend_long level = BROTLI_DEFAULT_QUALITY;
     zend_long mode =  BROTLI_MODE_GENERIC;
+    zend_string *dict = NULL;
 
-    ZEND_PARSE_PARAMETERS_START(1, 3)
+    ZEND_PARSE_PARAMETERS_START(1, 4)
         Z_PARAM_STRING(in, in_size)
         Z_PARAM_OPTIONAL
         Z_PARAM_LONG(level)
         Z_PARAM_LONG(mode)
+        Z_PARAM_STR_OR_NULL(dict)
     ZEND_PARSE_PARAMETERS_END();
 
     php_brotli_context ctx;
     php_brotli_context_init(&ctx);
     if (php_brotli_context_create_encoder_ex(&ctx, level, 0, mode,
-                                             1) != SUCCESS) {
+                                             dict, 1) != SUCCESS) {
         php_brotli_context_close(&ctx);
         RETURN_FALSE;
     }
@@ -1278,17 +1511,19 @@ static ZEND_FUNCTION(brotli_compress_init)
 {
     zend_long level = BROTLI_DEFAULT_QUALITY;
     zend_long mode =  BROTLI_MODE_GENERIC;
+    zend_string *dict = NULL;
 
-    ZEND_PARSE_PARAMETERS_START(0, 2)
+    ZEND_PARSE_PARAMETERS_START(0, 3)
         Z_PARAM_OPTIONAL
         Z_PARAM_LONG(level)
         Z_PARAM_LONG(mode)
+        Z_PARAM_STR_OR_NULL(dict)
     ZEND_PARSE_PARAMETERS_END();
 
     PHP_BROTLI_CONTEXT_OBJ_INIT_OF_CLASS(php_brotli_compress_context_ce);
 
     if (php_brotli_context_create_encoder_ex(ctx, level, 0, mode,
-                                             1) != SUCCESS) {
+                                             dict, 1) != SUCCESS) {
         zval_ptr_dtor(return_value);
         RETURN_FALSE;
     }
@@ -1410,11 +1645,13 @@ static ZEND_FUNCTION(brotli_uncompress)
     char *in;
     size_t in_size;
     smart_string out = {0};
+    zend_string *dict = NULL;
 
-    ZEND_PARSE_PARAMETERS_START(1, 2)
+    ZEND_PARSE_PARAMETERS_START(1, 3)
         Z_PARAM_STRING(in, in_size)
         Z_PARAM_OPTIONAL
         Z_PARAM_LONG(max_size)
+        Z_PARAM_STR_OR_NULL(dict)
     ZEND_PARSE_PARAMETERS_END();
 
     if (max_size && max_size < in_size) {
@@ -1423,7 +1660,7 @@ static ZEND_FUNCTION(brotli_uncompress)
 
     php_brotli_context ctx;
     php_brotli_context_init(&ctx);
-    if (php_brotli_context_create_decoder_ex(&ctx, 1) != SUCCESS) {
+    if (php_brotli_context_create_decoder_ex(&ctx, dict, 1) != SUCCESS) {
         php_brotli_context_close(&ctx);
         RETURN_FALSE;
     }
@@ -1463,13 +1700,16 @@ static ZEND_FUNCTION(brotli_uncompress)
 
 static ZEND_FUNCTION(brotli_uncompress_init)
 {
-    if (zend_parse_parameters_none() == FAILURE) {
-        RETURN_FALSE;
-    }
+    zend_string *dict = NULL;
+
+    ZEND_PARSE_PARAMETERS_START(0, 1)
+        Z_PARAM_OPTIONAL
+        Z_PARAM_STR_OR_NULL(dict)
+    ZEND_PARSE_PARAMETERS_END();
 
     PHP_BROTLI_CONTEXT_OBJ_INIT_OF_CLASS(php_brotli_uncompress_context_ce);
 
-    if (php_brotli_context_create_decoder_ex(ctx, 1) != SUCCESS) {
+    if (php_brotli_context_create_decoder_ex(ctx, dict, 1) != SUCCESS) {
         zval_ptr_dtor(return_value);
         RETURN_FALSE;
     }

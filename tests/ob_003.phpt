@@ -16,9 +16,8 @@ dummy=42
 ini_set('brotli.output_compression', 1);
 echo "hi\n";
 ?>
---EXPECTF--
-€hi
-
+--EXPECT_EXTERNAL--
+files/ob_hi.br
 --EXPECTHEADERS--
 Content-Encoding: br
 Vary: Accept-Encoding
