@@ -34,6 +34,7 @@ ZEND_BEGIN_MODULE_GLOBALS(brotli)
   zend_long output_compression;
   zend_long output_compression_default;
   zend_long output_compression_level;
+  char *output_compression_dict;
   zend_bool handler_registered;
   int compression_coding;
   php_brotli_context *ob_handler;
