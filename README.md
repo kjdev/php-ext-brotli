@@ -396,7 +396,7 @@ file_put_contents('compress.brotli:///path/to/data.br', $data, 0, $ctx);
 $uncompressed = file_get_contents('compress.brotli:///path/to/data.br', false, $ctx);
 
 // output handler
-ini_set('brotli.output_compression_dict', __DIR__ '/data.dict');
+ini_set('brotli.output_compression_dict', __DIR__ . '/data.dict');
 ini_set('brotli.output_compression', 'On');
 // OR: ob_start('ob_brotli_handler');
 echo ...;
