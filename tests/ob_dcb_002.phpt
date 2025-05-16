@@ -20,4 +20,4 @@ echo "{$data}";
 ?>
 --EXPECTF--
 %a
-Notice: PHP Request Shutdown: brotli: not found available-dictionary in Unknown on line 0
+Notice: %s: brotli: not found available-dictionary in Unknown on line 0

@@ -21,4 +21,4 @@ echo "{$data}";
 ?>
 --EXPECTF--
 %a
-Notice: PHP Request Shutdown: brotli: invalid available-dictionary: request(:test:) != actual(4SycXHyLhvKPL/nNaYXl60myMwris2L4X1O+q5tW1XE=) in Unknown on line 0
+Notice: %s: brotli: invalid available-dictionary: request(:test:) != actual(4SycXHyLhvKPL/nNaYXl60myMwris2L4X1O+q5tW1XE=) in Unknown on line 0
