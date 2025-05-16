@@ -4,6 +4,7 @@ output handler: dcb
 <?php
 if (BROTLI_DICTIONARY_SUPPORT === false) die('skip dictionary not supported');
 if (false === stristr(PHP_SAPI, 'cgi')) die('skip need sapi/cgi');
+if (substr(PHP_OS, 0, 3) === 'WIN') die('skip do not run on Windows');
 ?>
 --GET--
 ob=dictionary

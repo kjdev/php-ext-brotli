@@ -1,16 +1,16 @@
 --TEST--
-output handler: dcb: invalid available-dictionary
+output handler: dcb
 --SKIPIF--
 <?php
 if (BROTLI_DICTIONARY_SUPPORT === false) die('skip dictionary not supported');
 if (false === stristr(PHP_SAPI, 'cgi')) die('skip need sapi/cgi');
-if (substr(PHP_OS, 0, 3) === 'WIN') die('skip do not run on Windows');
+if (substr(PHP_OS, 0, 3) !== 'WIN') die('skip need Windows');
 ?>
 --GET--
 ob=dictionary
 --ENV--
 HTTP_ACCEPT_ENCODING=dcb
-HTTP_AVAILABLE_DICTIONARY=:test:
+HTTP_AVAILABLE_DICTIONARY=:hO22zM5/9TAGlAldeA8WvH1bvEv1LqjRjzzw3Zf9p4M=:
 --FILE--
 <?php
 
@@ -22,4 +22,6 @@ echo "{$data}";
 ?>
 --EXPECTF--
 %a
-Notice: %s: brotli: invalid available-dictionary: request(:test:) != actual(%s) in Unknown on line 0
+--EXPECTHEADERS--
+Content-Encoding: dcb
+Vary: Accept-Encoding, Available-Dictionary
