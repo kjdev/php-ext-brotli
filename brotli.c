@@ -356,10 +356,23 @@ static int php_brotli_output_encoding(void)
     return BROTLI_G(compression_coding);
 }
 
+static int php_brotli_output_handler_context_start(php_brotli_context *ctx)
+{
+    long level = BROTLI_G(output_compression_level);
+
+    int result = php_brotli_context_create_encoder_ex(ctx,
+                                                      level,
+                                                      BROTLI_DEFAULT_WINDOW,
+                                                      BROTLI_MODE_GENERIC,
+                                                      dict,
+                                                      0);
+
+    return result;
+}
+
 static int php_brotli_output_handler(void **handler_context,
                                      php_output_context *output_context)
 {
-    long level = BROTLI_DEFAULT_QUALITY;
     php_brotli_context *ctx = *(php_brotli_context **)handler_context;
 
     if (!php_brotli_output_encoding()) {
@@ -377,13 +390,8 @@ static int php_brotli_output_handler(void **handler_context,
         return FAILURE;
     }
 
-    level = BROTLI_G(output_compression_level);
-    if (level < BROTLI_MIN_QUALITY || level > BROTLI_MAX_QUALITY) {
-        level = BROTLI_DEFAULT_QUALITY;
-    }
-
     if (output_context->op & PHP_OUTPUT_HANDLER_START) {
-        if (php_brotli_context_create_encoder(ctx, level, 0, 0) != SUCCESS) {
+        if (php_brotli_output_handler_context_start(ctx) != SUCCESS) {
             return FAILURE;
         }
     }
@@ -455,8 +463,7 @@ static int php_brotli_output_handler(void **handler_context,
             return SUCCESS;
         } else {
             // restart
-            if (php_brotli_context_create_encoder(ctx,
-                                                  level, 0, 0) != SUCCESS) {
+            if (php_brotli_output_handler_context_start(ctx) != SUCCESS) {
                 return FAILURE;
             }
         }
@@ -614,12 +621,16 @@ static int php_brotli_output_conflict(const char *handler_name, size_t handler_n
     return SUCCESS;
 }
 
+#define STRINGIFY(n) #n
+#define TOSTRING(n) STRINGIFY(n)
+
 PHP_INI_BEGIN()
   STD_PHP_INI_BOOLEAN("brotli.output_compression", "0",
                       PHP_INI_ALL, OnUpdate_brotli_output_compression,
                       output_compression_default,
                       zend_brotli_globals, brotli_globals)
-  STD_PHP_INI_ENTRY("brotli.output_compression_level", "-1",
+  STD_PHP_INI_ENTRY("brotli.output_compression_level",
+                    TOSTRING(BROTLI_DEFAULT_QUALITY),
                     PHP_INI_ALL, OnUpdateLong, output_compression_level,
                     zend_brotli_globals, brotli_globals)
 PHP_INI_END()
