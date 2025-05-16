@@ -32,7 +32,7 @@ $compressed .= brotli_compress_add(
 if ($data === brotli_uncompress(data: $compressed, dict: $dictionary)) {
     echo "OK\n";
 } else {
-    echo "ERROR: {$modeTypeKey}\n";
+    echo "ERROR\n";
 }
 
 $out = '';
@@ -52,7 +52,7 @@ $out .= brotli_uncompress_add(
 if ($data === $out) {
     echo "Ok\n";
 } else {
-    echo "Error: {$modeTypeKey}\n";
+    echo "Error\n";
 }
 ?>
 ===DONE===
