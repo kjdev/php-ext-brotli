@@ -5,6 +5,7 @@
 #include <php.h>
 #include <SAPI.h>
 #include <php_ini.h>
+#include <ext/standard/file.h>
 #include <ext/standard/info.h>
 #include <ext/standard/php_smart_string.h>
 #if defined(HAVE_APCU_SUPPORT)
@@ -356,9 +357,68 @@ static int php_brotli_output_encoding(void)
     return BROTLI_G(compression_coding);
 }
 
+static zend_string *php_brotli_output_handler_load_dict(php_brotli_context *ctx)
+{
+    char *file = BROTLI_G(output_compression_dict);
+    if (!file || strlen(file) == 0) {
+        return NULL;
+    }
+
+#if defined(USE_BROTLI_DICTIONARY)
+    php_stream *stream = NULL;
+    zval *zcontext = NULL;
+    php_stream_context *context = NULL;
+    zend_long maxlen = (ssize_t) PHP_STREAM_COPY_ALL;
+
+    context = php_stream_context_from_zval(zcontext, 0);
+    stream = php_stream_open_wrapper_ex(file, "rb",
+                                        REPORT_ERRORS,
+                                        NULL, context);
+    if (!stream) {
+        php_error_docref(NULL, E_WARNING,
+                         "brotli: failed to load dictionary");
+        return NULL;
+    }
+
+    if (php_stream_is(stream, PHP_STREAM_IS_STDIO)) {
+        php_stream_set_option(stream, PHP_STREAM_OPTION_READ_BUFFER,
+                              PHP_STREAM_BUFFER_NONE, NULL);
+    }
+
+    /* dictionary size limit:
+    zend_off_t file_size = php_stream_tell(stream);
+    if (file_size < 0 || file_size > (64 * 1024)) {
+        php_error_docref(NULL, E_WARNING,
+                         "brotli: dictionary size (%lld bytes) "
+                         "exceeds 64 KiB limit",
+                         (long long)file_size);
+        php_stream_close(stream);
+        return NULL;
+    }
+    */
+
+    zend_string *dict = php_stream_copy_to_mem(stream, maxlen, 0);
+
+    php_stream_close(stream);
+
+    return dict;
+#else
+    php_error_docref(NULL, E_WARNING,
+                     "brotli: not supported compression dictionary");
+    return NULL;
+#endif
+}
+
 static int php_brotli_output_handler_context_start(php_brotli_context *ctx)
 {
     long level = BROTLI_G(output_compression_level);
+    zend_string *dict = php_brotli_output_handler_load_dict(ctx);
+    if (!BROTLI_G(compression_coding)) {
+        if (dict) {
+            zend_string_release(dict);
+        }
+        return FAILURE;
+    }
 
     int result = php_brotli_context_create_encoder_ex(ctx,
                                                       level,
@@ -366,6 +426,9 @@ static int php_brotli_output_handler_context_start(php_brotli_context *ctx)
                                                       BROTLI_MODE_GENERIC,
                                                       dict,
                                                       0);
+    if (dict) {
+        zend_string_release(dict);
+    }
 
     return result;
 }
@@ -632,6 +695,9 @@ PHP_INI_BEGIN()
   STD_PHP_INI_ENTRY("brotli.output_compression_level",
                     TOSTRING(BROTLI_DEFAULT_QUALITY),
                     PHP_INI_ALL, OnUpdateLong, output_compression_level,
+                    zend_brotli_globals, brotli_globals)
+  STD_PHP_INI_ENTRY("brotli.output_compression_dict", "",
+                    PHP_INI_ALL, OnUpdateString, output_compression_dict,
                     zend_brotli_globals, brotli_globals)
 PHP_INI_END()
 
