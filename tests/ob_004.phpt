@@ -16,9 +16,8 @@ dummy=42
 ob_start('ob_brotli_handler');
 echo "hi\n";
 ?>
---EXPECTF--
-€hi
-
+--EXPECT_EXTERNAL--
+files/ob_hi.br
 --EXPECTHEADERS--
 Content-Encoding: br
 Vary: Accept-Encoding
