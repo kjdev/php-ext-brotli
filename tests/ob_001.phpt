@@ -15,6 +15,8 @@ HTTP_ACCEPT_ENCODING=br
 <?php
 echo "hi\n";
 ?>
---EXPECTF--
-€hi
-
+--EXPECT_EXTERNAL--
+files/ob_hi.br
+--EXPECTHEADERS--
+Content-Encoding: br
+Vary: Accept-Encoding
