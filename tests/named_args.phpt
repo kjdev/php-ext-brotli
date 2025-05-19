@@ -79,21 +79,6 @@ try {
 } catch (Error $e) {
     echo $e->getMessage(), PHP_EOL;
 }
-
-echo "** brotli_uncompress(length:) **\n";
-try {
-    var_dump(gettype(brotli_uncompress(length: strlen($compressed))));
-} catch (Error $e) {
-    echo $e->getMessage(), PHP_EOL;
-}
-
-echo "** brotli_uncompress(data: length:) **\n";
-try {
-    var_dump(gettype(brotli_uncompress(data: $compressed, length: strlen($compressed))));
-    var_dump(brotli_uncompress(data: $compressed, length: strlen($compressed)) === $data);
-} catch (Error $e) {
-    echo $e->getMessage(), PHP_EOL;
-}
 ?>
 ===DONE===
 --EXPECTF--
@@ -117,11 +102,6 @@ brotli_compress(): Argument #1 ($data) not passed
 ** brotli_uncompress(): false **
 brotli_uncompress() expects at least 1 argument, 0 given
 ** brotli_uncompress(data:) **
-string(6) "string"
-bool(true)
-** brotli_uncompress(length:) **
-brotli_uncompress(): Argument #1 ($data) not passed
-** brotli_uncompress(data: length:) **
 string(6) "string"
 bool(true)
 ===DONE===

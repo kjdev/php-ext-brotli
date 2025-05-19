@@ -17,15 +17,15 @@ echo "*** Dictionary Compression ***", PHP_EOL;
 $out1 = brotli_compress($data, $level, $mode, $dictionary);
 $out2 = \Brotli\compress($data, $level, $mode, $dictionary);
 
-var_dump(brotli_uncompress($out1, 0, $dictionary) === $data);
-var_dump(brotli_uncompress($out2, 0, $dictionary) === $data);
-var_dump(\Brotli\uncompress($out1, 0, $dictionary) === $data);
-var_dump(\Brotli\uncompress($out2, 0, $dictionary) === $data);
+var_dump(brotli_uncompress($out1, $dictionary) === $data);
+var_dump(brotli_uncompress($out2, $dictionary) === $data);
+var_dump(\Brotli\uncompress($out1, $dictionary) === $data);
+var_dump(\Brotli\uncompress($out2, $dictionary) === $data);
 
 var_dump(brotli_uncompress($out1) === $data);
 var_dump(brotli_uncompress($out2) === $data);
-var_dump(brotli_uncompress($out1, 0, 'dictionary') === $data);
-var_dump(brotli_uncompress($out2, 0, 'dictionary') === $data);
+var_dump(brotli_uncompress($out1, 'dictionary') === $data);
+var_dump(brotli_uncompress($out2, 'dictionary') === $data);
 ?>
 ===DONE===
 --EXPECTF--

@@ -80,21 +80,6 @@ try {
 } catch (Error $e) {
     echo $e->getMessage(), PHP_EOL;
 }
-
-echo "** brotli_uncompress(length:, dict:) **\n";
-try {
-    var_dump(gettype(brotli_uncompress(length: strlen($compressed), dict: $dictionary)));
-} catch (Error $e) {
-    echo $e->getMessage(), PHP_EOL;
-}
-
-echo "** brotli_uncompress(data: length:, dict:) **\n";
-try {
-    var_dump(gettype(brotli_uncompress(data: $compressed, length: strlen($compressed), dict: $dictionary)));
-    var_dump(brotli_uncompress(data: $compressed, length: strlen($compressed), dict: $dictionary) === $data);
-} catch (Error $e) {
-    echo $e->getMessage(), PHP_EOL;
-}
 ?>
 ===DONE===
 --EXPECTF--
@@ -118,11 +103,6 @@ brotli_compress(): Argument #1 ($data) not passed
 ** brotli_uncompress(dict:): false **
 brotli_uncompress(): Argument #1 ($data) not passed
 ** brotli_uncompress(data:, dict:) **
-string(6) "string"
-bool(true)
-** brotli_uncompress(length:, dict:) **
-brotli_uncompress(): Argument #1 ($data) not passed
-** brotli_uncompress(data: length:, dict:) **
 string(6) "string"
 bool(true)
 ===DONE===

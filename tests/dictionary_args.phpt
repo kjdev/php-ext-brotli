@@ -30,7 +30,7 @@ function check($data, $dictionary, $level, $mode)
         ($dictionary === null ? 'null' : 'dict'), ' -- ',
         var_export(
             (($output === false) ? false
-             : brotli_uncompress($output, 0, $dictionary) === $data),
+             : brotli_uncompress($output, $dictionary) === $data),
             true
         ), PHP_EOL;
 }

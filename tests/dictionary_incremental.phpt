@@ -26,7 +26,7 @@ foreach ($modeTypes as $modeTypeKey => $modeType) {
     }
     $compressed .= brotli_compress_add($context, '', BROTLI_FINISH);
 
-    if ($data === brotli_uncompress($compressed, 0, $dictionary)) {
+    if ($data === brotli_uncompress($compressed, $dictionary)) {
         echo "OK: {$modeTypeKey}\n";
     } else {
         echo "ERROR: {$modeTypeKey}\n";

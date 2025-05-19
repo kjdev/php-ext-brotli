@@ -30,7 +30,7 @@ $decomp = file_get_contents('compress.brotli://' . $file, false, $ctx);
 var_dump($decomp == $data);
 
 $comp = file_get_contents($file);
-$decomp = brotli_uncompress($comp, 0, $dictionary);
+$decomp = brotli_uncompress($comp, $dictionary);
 var_dump($decomp == $data);
 
 @unlink($file);
