@@ -54,12 +54,10 @@ ZEND_END_ARG_INFO()
 #if PHP_VERSION_ID >= 80000
 ZEND_BEGIN_ARG_WITH_RETURN_TYPE_MASK_EX(arginfo_brotli_uncompress, 0, 1, MAY_BE_STRING|MAY_BE_FALSE)
     ZEND_ARG_TYPE_INFO(0, data, IS_STRING, 0)
-    ZEND_ARG_TYPE_INFO_WITH_DEFAULT_VALUE(0, length, IS_LONG, 0, "0")
     ZEND_ARG_TYPE_INFO_WITH_DEFAULT_VALUE(0, dict, IS_STRING, 1, "null")
 #else
 ZEND_BEGIN_ARG_INFO_EX(arginfo_brotli_uncompress, 0, 0, 1)
     ZEND_ARG_INFO(0, data)
-    ZEND_ARG_INFO(0, length)
 #if defined(USE_BROTLI_DICTIONARY)
     ZEND_ARG_INFO(0, dict)
 #endif
@@ -1663,22 +1661,16 @@ static ZEND_FUNCTION(brotli_compress_add)
 
 static ZEND_FUNCTION(brotli_uncompress)
 {
-    zend_long max_size = 0;
     char *in;
     size_t in_size;
     smart_string out = {0};
     zend_string *dict = NULL;
 
-    ZEND_PARSE_PARAMETERS_START(1, 3)
+    ZEND_PARSE_PARAMETERS_START(1, 2)
         Z_PARAM_STRING(in, in_size)
         Z_PARAM_OPTIONAL
-        Z_PARAM_LONG(max_size)
         Z_PARAM_STR_OR_NULL(dict)
     ZEND_PARSE_PARAMETERS_END();
-
-    if (max_size && max_size < in_size) {
-        in_size = max_size;
-    }
 
     php_brotli_context ctx;
     php_brotli_context_init(&ctx);

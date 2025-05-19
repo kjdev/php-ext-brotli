@@ -71,7 +71,7 @@ namespace {
   /**
    * @note dict parameter can be used when BROTLI_DICTIONARY_SUPPORT is enabled
    */
-  function brotli_uncompress(string $data, int $length = 0, ?string $dict = null): string|false {}
+  function brotli_uncompress(string $data, ?string $dict = null): string|false {}
 
   /**
    * @note dict parameter can be used when BROTLI_DICTIONARY_SUPPORT is enabled
@@ -98,7 +98,7 @@ namespace Brotli {
   /**
    * @note dict parameter can be used when BROTLI_DICTIONARY_SUPPORT is enabled
    */
-  function uncompress(string $data, int $length = 0, ?string $dict = null): string|false {}
+  function uncompress(string $data, ?string $dict = null): string|false {}
 
   /**
    * @note dict parameter can be used when BROTLI_DICTIONARY_SUPPORT is enabled
