@@ -10,10 +10,10 @@
   <email>kjdev@php.net</email>
   <active>yes</active>
  </lead>
- <date>2025-04-22</date>
+ <date>2025-05-19</date>
  <version>
-  <release>0.16.0</release>
-  <api>0.16.0</api>
+  <release>0.17.0</release>
+  <api>0.17.0</api>
  </version>
  <stability>
   <release>stable</release>
@@ -21,8 +21,23 @@
  </stability>
  <license>MIT</license>
  <notes>
-- change: brotli.state resource in brotli_uncompress_{init,add}() to Btorli\UnCompress\Context class
-- change: brotli.state resource in brotli_compress_{init,add}() to Btorli\Compress\Context class
+- experimental: dcb support in output handler
+- feat: dictionary support
+- feat: named arguments support (PHP 8.0+)
+- change: argumeent name for brotli_compress() and brotli_compress_init(): quality -> level
+- change: argumeent name for brotli_uncompress(): max -> length
+- change: version in info to BrotliDecoderVersion()
+- change: add GCC visibility hidden when include bundled
+- change!: incorrect parameter cause errors
+- refactor: output hander context start
+- refactor: change use php_brotli_context in brotli_uncompress()
+- refactor: add parameter settings for BROTLI_DECODER_PARAM_LARGE_WINDOW to brotli_uncompress_init()
+- refactor: change error message
+- refactor: change use BrotliEncoderCompressStream() in brotli_compress()
+- refactor: php_brotli_decoder_create() -> php_brotli_context_create_decoder()
+- refactor: php_brotli_encoder_create() -> php_brotli_context_create_encoder()
+- refactor: php_brotli_stream_data struct
+- refactor: php_brotli_context struct
  </notes>
  <contents>
   <dir name="/">
@@ -156,6 +171,12 @@
    <file name="tests/streams_004.phpt" role="test" />
    <file name="tests/streams_005.phpt" role="test" />
    <file name="tests/streams_006.phpt" role="test" />
+   <file name="tests/files/dictionary_ob.br" role="test" />
+   <file name="tests/files/ob_008.br" role="test" />
+   <file name="tests/files/ob_011.br" role="test" />
+   <file name="tests/files/ob_data.br" role="test" />
+   <file name="tests/files/ob_dcb.br" role="test" />
+   <file name="tests/files/ob_hi.br" role="test" />
   </dir>
  </contents>
  <dependencies>
