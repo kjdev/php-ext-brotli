@@ -138,7 +138,7 @@ The compressed string or FALSE if an error occurred.
 #### Description
 
 ``` php
-brotli_uncompress ( string $data, int $length = 0, string|null $dict = null ): string|false
+brotli_uncompress ( string $data, string|null $dict = null ): string|false
 ```
 
 This function uncompress a compressed string.
@@ -148,10 +148,6 @@ This function uncompress a compressed string.
 * _data_
 
   The data compressed by brotli\_compress().
-
-* _length_
-
-  The maximum length of data to decode.
 
 * _dict_
 
@@ -289,7 +285,7 @@ Returns a chunk of uncompressed data, or FALSE on failure.
 Namespace Brotli;
 
 function compress( string $data, int $level = \BROTLI_COMPRESS_LEVEL_DEFAULT, int $mode = \BROTLI_GENERIC, string|null $dict = null ): string|false {}
-function uncompress( string $data, int $length = 0, string|null $dict = null ): string|false {}
+function uncompress( string $data, string|null $dict = null ): string|false {}
 function compress_init( int $level = \BROTLI_COMPRESS_LEVEL_DEFAULT, int $mode = \BROTLI_GENERIC, string|null $dict = null ): \Brotli\Compress\Context|false {}
 function compress_add( \Brotli\Compress\Context $context, string $data, $mode = \BROTLI_FLUSH ): string|false {}
 function uncompress_init(string|null $dict = null): \Brotli\UnCompress\Context|false {}
