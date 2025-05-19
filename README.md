@@ -85,6 +85,9 @@ BROTLI\_DICTIONARY\_SUPPORT       | Dictionary support value
 
 > `BROTLI_DICTIONARY_SUPPORT` must be enabled
 > with brotli library version 1.1.0 or higher
+>
+> dictionary only work from compression level 5 or higher
+> [note](google/brotli#1148)
 
 ## Function
 
