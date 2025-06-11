@@ -64,6 +64,18 @@ namespace {
   const BROTLI_DICTIONARY_SUPPORT = UNKNOWN;
 
   /**
+   * @var string
+   * @cvalue BROTLI_VERSION_TEXT
+   */
+  const BROTLI_VERSION_TEXT = UNKNOWN;
+
+  /**
+   * @var int
+   * @cvalue BROTLI_VERSION_NUMBER
+   */
+  const BROTLI_VERSION_NUMBER = UNKNOWN;
+
+  /**
    * @note dict parameter can be used when BROTLI_DICTIONARY_SUPPORT is enabled
    */
   function brotli_compress(string $data, int $level = BROTLI_COMPRESS_LEVEL_DEFAULT, int $mode = BROTLI_GENERIC, ?string $dict = null): string|false {}

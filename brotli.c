@@ -1309,6 +1309,18 @@ ZEND_MINIT_FUNCTION(brotli)
                            CONST_CS | CONST_PERSISTENT);
 #endif
 
+    uint32_t version_number = BrotliDecoderVersion();
+    char version_text[64];
+    snprintf(version_text, sizeof(version_text), "%d.%d.%d",
+             version_number >> 24,
+             (version_number >> 12) & 0xfff,
+             version_number & 0xfff);
+
+    REGISTER_LONG_CONSTANT("BROTLI_VERSION_NUMBER", version_number,
+                           CONST_CS | CONST_PERSISTENT);
+    REGISTER_STRING_CONSTANT("BROTLI_VERSION_TEXT", version_text,
+                             CONST_CS | CONST_PERSISTENT);
+
     php_output_handler_alias_register(ZEND_STRL(PHP_BROTLI_OUTPUT_HANDLER),
                                       php_brotli_output_handler_init);
     php_output_handler_conflict_register(ZEND_STRL(PHP_BROTLI_OUTPUT_HANDLER),
