@@ -1481,7 +1481,7 @@ static ZEND_FUNCTION(brotli_compress)
         Z_PARAM_LONG(level)
         Z_PARAM_LONG(mode)
         Z_PARAM_STR_OR_NULL(dict)
-    ZEND_PARSE_PARAMETERS_END();
+    ZEND_PARSE_PARAMETERS_END_EX(RETURN_FALSE);
 
     php_brotli_context ctx;
     php_brotli_context_init(&ctx);
@@ -1538,7 +1538,7 @@ static ZEND_FUNCTION(brotli_compress_init)
         Z_PARAM_LONG(level)
         Z_PARAM_LONG(mode)
         Z_PARAM_STR_OR_NULL(dict)
-    ZEND_PARSE_PARAMETERS_END();
+    ZEND_PARSE_PARAMETERS_END_EX(RETURN_FALSE);
 
     PHP_BROTLI_CONTEXT_OBJ_INIT_OF_CLASS(php_brotli_compress_context_ce);
 
@@ -1573,7 +1573,7 @@ static ZEND_FUNCTION(brotli_compress_add)
         Z_PARAM_STRING(in_buf, in_size)
         Z_PARAM_OPTIONAL
         Z_PARAM_LONG(mode)
-    ZEND_PARSE_PARAMETERS_END();
+    ZEND_PARSE_PARAMETERS_END_EX(RETURN_FALSE);
 
     if (mode != BROTLI_OPERATION_PROCESS &&
         mode != BROTLI_OPERATION_FLUSH &&
@@ -1670,7 +1670,7 @@ static ZEND_FUNCTION(brotli_uncompress)
         Z_PARAM_STRING(in, in_size)
         Z_PARAM_OPTIONAL
         Z_PARAM_STR_OR_NULL(dict)
-    ZEND_PARSE_PARAMETERS_END();
+    ZEND_PARSE_PARAMETERS_END_EX(RETURN_FALSE);
 
     php_brotli_context ctx;
     php_brotli_context_init(&ctx);
@@ -1719,7 +1719,7 @@ static ZEND_FUNCTION(brotli_uncompress_init)
     ZEND_PARSE_PARAMETERS_START(0, 1)
         Z_PARAM_OPTIONAL
         Z_PARAM_STR_OR_NULL(dict)
-    ZEND_PARSE_PARAMETERS_END();
+    ZEND_PARSE_PARAMETERS_END_EX(RETURN_FALSE);
 
     PHP_BROTLI_CONTEXT_OBJ_INIT_OF_CLASS(php_brotli_uncompress_context_ce);
 
@@ -1753,7 +1753,7 @@ static ZEND_FUNCTION(brotli_uncompress_add)
         Z_PARAM_STRING(in_buf, in_size)
         Z_PARAM_OPTIONAL
         Z_PARAM_LONG(mode)
-    ZEND_PARSE_PARAMETERS_END();
+    ZEND_PARSE_PARAMETERS_END_EX(RETURN_FALSE);
 
     if (mode != BROTLI_OPERATION_PROCESS &&
         mode != BROTLI_OPERATION_FLUSH &&
