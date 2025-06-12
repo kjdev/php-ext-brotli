@@ -62,7 +62,6 @@ if test "$PHP_BROTLI" != "no"; then
     fi
     PHP_EVAL_INCLINE($LIBBROTLIDEC_CFLAGS)
     PHP_EVAL_LIBLINE($LIBBROTLIDEC_LIBS, BROTLI_SHARED_LIBADD)
-    AC_DEFINE_UNQUOTED(BROTLI_LIB_VERSION, "$LIBBROTLIDEC_VERSION", [system library version])
 
     AC_MSG_CHECKING(for brotli dictionary)
     if $PKG_CONFIG libbrotlidec --atleast-version 1.1.0; then
