@@ -1425,15 +1425,9 @@ ZEND_MINFO_FUNCTION(brotli)
     php_info_print_table_start();
     php_info_print_table_row(2, "Brotli support", "enabled");
     php_info_print_table_row(2, "Extension Version", BROTLI_EXT_VERSION);
-#ifdef BROTLI_LIB_VERSION
-    php_info_print_table_row(2, "Library Version", BROTLI_LIB_VERSION);
-#else
-    uint32_t version = BrotliDecoderVersion();
-    char buffer[64];
-    snprintf(buffer, sizeof(buffer), "%d.%d.%d",
-             version >> 24, (version >> 12) & 0xfff, version & 0xfff);
-    php_info_print_table_row(2, "Library Version", buffer);
-#endif
+    const zval *ver = zend_get_constant_str("BROTLI_VERSION_TEXT",
+                                            sizeof("BROTLI_VERSION_TEXT") - 1);
+    php_info_print_table_row(2, "Library Version", Z_STRVAL_P(ver));
 #if defined(USE_BROTLI_DICTIONARY)
     php_info_print_table_row(2, "Dictionary support", "enabled");
 #else
