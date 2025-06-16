@@ -10,10 +10,10 @@
   <email>kjdev@php.net</email>
   <active>yes</active>
  </lead>
- <date>2025-05-19</date>
+ <date>2025-06-16</date>
  <version>
-  <release>0.17.0</release>
-  <api>0.17.0</api>
+  <release>0.18.0</release>
+  <api>0.18.0</api>
  </version>
  <stability>
   <release>stable</release>
@@ -21,23 +21,12 @@
  </stability>
  <license>MIT</license>
  <notes>
-- experimental: dcb support in output handler
-- feat: dictionary support
-- feat: named arguments support (PHP 8.0+)
-- change: argumeent name for brotli_compress() and brotli_compress_init(): quality -> level
-- change: argumeent name for brotli_uncompress(): max -> length
-- change: version in info to BrotliDecoderVersion()
-- change: add GCC visibility hidden when include bundled
-- change!: incorrect parameter cause errors
-- refactor: output hander context start
-- refactor: change use php_brotli_context in brotli_uncompress()
-- refactor: add parameter settings for BROTLI_DECODER_PARAM_LARGE_WINDOW to brotli_uncompress_init()
-- refactor: change error message
-- refactor: change use BrotliEncoderCompressStream() in brotli_compress()
-- refactor: php_brotli_decoder_create() -> php_brotli_context_create_decoder()
-- refactor: php_brotli_encoder_create() -> php_brotli_context_create_encoder()
-- refactor: php_brotli_stream_data struct
-- refactor: php_brotli_context struct
+- add: BROTLI_VERSION_TEXT and BROTLI_VERSION_NUMBER constants
+- change!: remove length argument for brotli_uncompress()
+- remove: BROTLI_LIB_VERSION that is no longer needed
+- fix: memory leak
+- refactor: change library version acquisition in ZEND_MINFO_FUNCTION to constant
+- refactor: zend parse parameters sets the return value on error to false
  </notes>
  <contents>
   <dir name="/">
