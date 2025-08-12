@@ -21,7 +21,9 @@
  </stability>
  <license>MIT</license>
  <notes>
--
+- improve: Use Zend/zend_smart_string.h
+- improve: PHP 8.5 alpha3 compatibility
+- fix: Add missing zend_string_release calls to prevent memory leaks
  </notes>
  <contents>
   <dir name="/">
