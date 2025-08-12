@@ -10,10 +10,10 @@
   <email>kjdev@php.net</email>
   <active>yes</active>
  </lead>
- <date>2025-06-16</date>
+ <date>2025-08-12</date>
  <version>
-  <release>0.18.0</release>
-  <api>0.18.0</api>
+  <release>0.18.1</release>
+  <api>0.18.1</api>
  </version>
  <stability>
   <release>stable</release>
@@ -21,12 +21,7 @@
  </stability>
  <license>MIT</license>
  <notes>
-- add: BROTLI_VERSION_TEXT and BROTLI_VERSION_NUMBER constants
-- change!: remove length argument for brotli_uncompress()
-- remove: BROTLI_LIB_VERSION that is no longer needed
-- fix: memory leak
-- refactor: change library version acquisition in ZEND_MINFO_FUNCTION to constant
-- refactor: zend parse parameters sets the return value on error to false
+-
  </notes>
  <contents>
   <dir name="/">
