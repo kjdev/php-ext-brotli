@@ -446,6 +446,7 @@ static zend_string *php_brotli_output_handler_load_dict(php_brotli_context *ctx)
                                      "request(%s) != actual(%s)",
                                      Z_STRVAL_P(available), ZSTR_VAL(b64));
                     BROTLI_G(compression_coding) &= ~PHP_BROTLI_ENCODING_DCB;
+                    zend_string_release(dict);
                     dict = NULL;
                 }
                 zend_string_free(b64);
@@ -454,6 +455,7 @@ static zend_string *php_brotli_output_handler_load_dict(php_brotli_context *ctx)
             php_error_docref(NULL, E_WARNING,
                              "brotli: not found available-dictionary");
             BROTLI_G(compression_coding) &= ~PHP_BROTLI_ENCODING_DCB;
+            zend_string_release(dict);
             dict = NULL;
         }
     }
