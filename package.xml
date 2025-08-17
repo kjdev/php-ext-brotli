@@ -10,10 +10,10 @@
   <email>kjdev@php.net</email>
   <active>yes</active>
  </lead>
- <date>2025-08-12</date>
+ <date>2025-08-17</date>
  <version>
-  <release>0.18.1</release>
-  <api>0.18.1</api>
+  <release>0.18.2</release>
+  <api>0.18.2</api>
  </version>
  <stability>
   <release>stable</release>
@@ -21,9 +21,7 @@
  </stability>
  <license>MIT</license>
  <notes>
-- improve: Use Zend/zend_smart_string.h
-- improve: PHP 8.5 alpha3 compatibility
-- fix: Add missing zend_string_release calls to prevent memory leaks
+- fix: disable dcb encoding when dictionary loading fails
  </notes>
  <contents>
   <dir name="/">
@@ -127,10 +125,17 @@
    <file name="brotli/c/include/brotli/types.h" role="src" />
    <file name="tests/alias.phpt" role="test" />
    <file name="tests/apcu_serializer.phpt" role="test" />
-   <file name="tests/bug61820.phpt" role="test" />
-   <file name="tests/bug65391.phpt" role="test" />
    <file name="tests/compatibility.phpt" role="test" />
    <file name="tests/compress_add.phpt" role="test" />
+   <file name="tests/compress_args.phpt" role="test" />
+   <file name="tests/dictionary_args.phpt" role="test" />
+   <file name="tests/dictionary_basic.phpt" role="test" />
+   <file name="tests/dictionary_incremental.phpt" role="test" />
+   <file name="tests/dictionary_named_args.phpt" role="test" />
+   <file name="tests/dictionary_named_args_incremental.phpt" role="test" />
+   <file name="tests/dictionary_ob.phpt" role="test" />
+   <file name="tests/dictionary_streams.phpt" role="test" />
+   <file name="tests/data.dict" role="test" />
    <file name="tests/data.inc" role="test" />
    <file name="tests/files.inc" role="test" />
    <file name="tests/incremental_compress_add_alias.phpt" role="test" />
@@ -139,6 +144,8 @@
    <file name="tests/incremental_uncompress_add_alias.phpt" role="test" />
    <file name="tests/incremental_uncompress_add_basic.phpt" role="test" />
    <file name="tests/info.phpt" role="test" />
+   <file name="tests/named_args.phpt" role="test" />
+   <file name="tests/named_args_incremental.phpt" role="test" />
    <file name="tests/ob_001.phpt" role="test" />
    <file name="tests/ob_002.phpt" role="test" />
    <file name="tests/ob_003.phpt" role="test" />
@@ -150,6 +157,11 @@
    <file name="tests/ob_009.phpt" role="test" />
    <file name="tests/ob_010.phpt" role="test" />
    <file name="tests/ob_011.phpt" role="test" />
+   <file name="tests/ob_dcb_001.phpt" role="test" />
+   <file name="tests/ob_dcb_002.phpt" role="test" />
+   <file name="tests/ob_dcb_003.phpt" role="test" />
+   <file name="tests/ob_dcb_004.phpt" role="test" />
+   <file name="tests/ob_dcb_005.phpt" role="test" />
    <file name="tests/roundtrip.phpt" role="test" />
    <file name="tests/streams_001.phpt" role="test" />
    <file name="tests/streams_002.phpt" role="test" />
@@ -160,6 +172,9 @@
    <file name="tests/files/dictionary_ob.br" role="test" />
    <file name="tests/files/ob_008.br" role="test" />
    <file name="tests/files/ob_011.br" role="test" />
+   <file name="tests/files/ob_data.br" role="test" />
+   <file name="tests/files/ob_dcb.br" role="test" />
+   <file name="tests/files/ob_hi.br" role="test" />
    <file name="tests/files/ob_data.br" role="test" />
    <file name="tests/files/ob_dcb.br" role="test" />
    <file name="tests/files/ob_hi.br" role="test" />
