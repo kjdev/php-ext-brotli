@@ -376,7 +376,6 @@ static zend_string *php_brotli_output_handler_load_dict(php_brotli_context *ctx)
 {
     char *file = BROTLI_G(output_compression_dict);
     if (!file || strlen(file) == 0) {
-        BROTLI_G(compression_coding) &= ~PHP_BROTLI_ENCODING_DCB;
         return NULL;
     }
 
@@ -419,7 +418,6 @@ static zend_string *php_brotli_output_handler_load_dict(php_brotli_context *ctx)
     php_stream_close(stream);
 
     if (!dict) {
-        BROTLI_G(compression_coding) &= ~PHP_BROTLI_ENCODING_DCB;
         return NULL;
     }
 
@@ -457,7 +455,6 @@ static zend_string *php_brotli_output_handler_load_dict(php_brotli_context *ctx)
         } else {
             php_error_docref(NULL, E_WARNING,
                              "brotli: not found available-dictionary");
-            BROTLI_G(compression_coding) &= ~PHP_BROTLI_ENCODING_DCB;
             zend_string_release(dict);
             dict = NULL;
         }
@@ -475,6 +472,9 @@ static int php_brotli_output_handler_context_start(php_brotli_context *ctx)
 {
     long level = BROTLI_G(output_compression_level);
     zend_string *dict = php_brotli_output_handler_load_dict(ctx);
+    if (dict == NULL) {
+        BROTLI_G(compression_coding) &= ~PHP_BROTLI_ENCODING_DCB;
+    }
     if (!BROTLI_G(compression_coding)) {
         return FAILURE;
     }
