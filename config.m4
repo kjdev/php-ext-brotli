@@ -103,13 +103,17 @@ if test "$PHP_BROTLI" != "no"; then
       brotli/c/enc/memory.c
       brotli/c/enc/metablock.c
       brotli/c/enc/static_dict.c
+      brotli/c/enc/static_dict_lut.c
+      brotli/c/enc/static_init.c
       brotli/c/enc/utf8_util.c
     "
     BROTLI_DEC_SOURCES="
       brotli/c/dec/bit_reader.c
       brotli/c/dec/decode.c
       brotli/c/dec/huffman.c
+      brotli/c/dec/prefix.c
       brotli/c/dec/state.c
+      brotli/c/dec/static_init.c
     "
 
     AC_DEFINE(USE_BROTLI_BUNDLED, 1, [use bundled])
