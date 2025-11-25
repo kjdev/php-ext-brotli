@@ -234,3 +234,7 @@ Testing decompression of file zeros.compressed
   read uncompressed .. OK
   compressed        .. OK
   uncompressed      .. OK
+Testing decompression of file zerosukkanooa.compressed
+  read uncompressed .. OK
+  compressed        .. OK
+  uncompressed      .. OK
