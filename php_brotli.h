@@ -5,7 +5,7 @@
 extern "C" {
 #endif
 
-#define BROTLI_EXT_VERSION "0.18.2"
+#define BROTLI_EXT_VERSION "0.18.3"
 #define BROTLI_NS "Brotli"
 
 /* brotli */
