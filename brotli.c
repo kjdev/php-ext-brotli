@@ -122,6 +122,19 @@ static int APC_SERIALIZER_NAME(brotli)(APC_SERIALIZER_ARGS);
 static int APC_UNSERIALIZER_NAME(brotli)(APC_UNSERIALIZER_ARGS);
 #endif
 
+#if PHP_VERSION_ID < 70200
+static zend_always_inline zend_string *smart_str_extract(smart_str *str) {
+	if (str->s) {
+		smart_str_0(str);
+		zend_string *res = str->s;
+		str->s = NULL;
+		return res;
+	} else {
+		return ZSTR_EMPTY_ALLOC();
+	}
+}
+#endif
+
 static zend_function_entry brotli_functions[] = {
     ZEND_FE(brotli_compress, arginfo_brotli_compress)
     ZEND_FE(brotli_uncompress, arginfo_brotli_uncompress)
