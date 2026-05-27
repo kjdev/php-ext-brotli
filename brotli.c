@@ -1832,9 +1832,15 @@ static ZEND_FUNCTION(brotli_uncompress_add)
         }
     }
 
-    RETVAL_STR(smart_str_extract(&out));
-
     efree(buffer);
+
+    if (result == BROTLI_DECODER_RESULT_ERROR) {
+        php_error_docref(NULL, E_WARNING, "failed to uncompress");
+        smart_str_free(&out);
+        RETURN_FALSE;
+    }
+
+    RETURN_STR(smart_str_extract(&out));
 }
 
 #if defined(HAVE_APCU_SUPPORT)
