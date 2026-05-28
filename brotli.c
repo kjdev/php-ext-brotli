@@ -902,7 +902,8 @@ static ssize_t php_brotli_decompress_read(php_stream *stream,
                 break;
             }
             self->ctx.available_in = php_stream_read(self->stream,
-                                                     self->input_buf, count);
+                                                     self->input_buf,
+                                                     PHP_BROTLI_BUFFER_SIZE);
             self->ctx.next_in = self->input_buf;
         } else {
             /* decoder error */
