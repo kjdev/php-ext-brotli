@@ -797,6 +797,7 @@ typedef struct _php_brotli_stream_data {
     php_brotli_context ctx;
     BrotliDecoderResult result;
     php_stream *stream;
+    uint8_t *input_buf;
 } php_brotli_stream_data;
 
 #define STREAM_DATA_FROM_STREAM() \
@@ -822,6 +823,10 @@ static int php_brotli_decompress_close(php_stream *stream,
 
     php_brotli_context_close(&self->ctx);
 
+    if (self->input_buf) {
+        efree(self->input_buf);
+    }
+
     efree(self);
 
     stream->abstract = NULL;
@@ -845,48 +850,33 @@ static ssize_t php_brotli_decompress_read(php_stream *stream,
     STREAM_DATA_FROM_STREAM();
 
     /* input */
-    uint8_t *input = (uint8_t *)emalloc(PHP_BROTLI_BUFFER_SIZE);
-    if (!input) {
-#if PHP_VERSION_ID < 70400
-        return 0;
-#else
-        return -1;
-#endif
+    if (!self->input_buf) {
+        self->input_buf = emalloc(PHP_BROTLI_BUFFER_SIZE);
     }
 
     if (self->result == BROTLI_DECODER_RESULT_NEEDS_MORE_INPUT) {
         if (php_stream_eof(self->stream)) {
             /* corrupt input */
-            efree(input);
 #if PHP_VERSION_ID < 70400
             return 0;
 #else
             return -1;
 #endif
         }
-        self->ctx.available_in = php_stream_read(self->stream, input,
+        self->ctx.available_in = php_stream_read(self->stream, self->input_buf,
                                                  PHP_BROTLI_BUFFER_SIZE);
         if (!self->ctx.available_in) {
-            efree(input);
 #if PHP_VERSION_ID < 70400
             return 0;
 #else
             return -1;
 #endif
         }
-        self->ctx.next_in = input;
+        self->ctx.next_in = self->input_buf;
     }
 
     /* output */
     uint8_t *output = (uint8_t *)emalloc(count);
-    if (!output) {
-        efree(input);
-#if PHP_VERSION_ID < 70400
-        return 0;
-#else
-        return -1;
-#endif
-    }
     self->ctx.available_out = count;
     self->ctx.next_out = output;
 
@@ -912,15 +902,15 @@ static ssize_t php_brotli_decompress_read(php_stream *stream,
                 break;
             }
             self->ctx.available_in = php_stream_read(self->stream,
-                                                     input, count);
-            self->ctx.next_in = input;
+                                                     self->input_buf,
+                                                     PHP_BROTLI_BUFFER_SIZE);
+            self->ctx.next_in = self->input_buf;
         } else {
             /* decoder error */
             break;
         }
     }
 
-    efree(input);
     efree(output);
 
     return ret;
