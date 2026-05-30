@@ -784,6 +784,12 @@ PHP_INI_BEGIN()
   STD_PHP_INI_ENTRY("brotli.output_compression_dict", "",
                     PHP_INI_ALL, OnUpdateString, output_compression_dict,
                     zend_brotli_globals, brotli_globals)
+#if defined(HAVE_APCU_SUPPORT)
+  STD_PHP_INI_ENTRY("brotli.apcu_compression_level",
+                    TOSTRING(BROTLI_DEFAULT_QUALITY),
+                    PHP_INI_ALL, OnUpdateLong, apcu_compression_level,
+                    zend_brotli_globals, brotli_globals)
+#endif
 PHP_INI_END()
 
 static void php_brotli_init_globals(zend_brotli_globals *brotli_globals)
@@ -1452,6 +1458,7 @@ ZEND_MINFO_FUNCTION(brotli)
     php_info_print_table_row(2, "APCu serializer ABI", APC_SERIALIZER_ABI);
 #endif
     php_info_print_table_end();
+    DISPLAY_INI_ENTRIES();
 }
 
 #if defined(HAVE_APCU_SUPPORT)
@@ -1837,10 +1844,15 @@ static ZEND_FUNCTION(brotli_uncompress_add)
 static int APC_SERIALIZER_NAME(brotli)(APC_SERIALIZER_ARGS)
 {
     int result;
-    int lgwin = BROTLI_DEFAULT_WINDOW, level = BROTLI_DEFAULT_QUALITY;
+    int lgwin = BROTLI_DEFAULT_WINDOW;
+    long level = BROTLI_G(apcu_compression_level);
     php_serialize_data_t var_hash;
     smart_str var = {0};
     BrotliEncoderMode mode = BROTLI_MODE_GENERIC;
+
+    if (level < BROTLI_MIN_QUALITY || level > BROTLI_MAX_QUALITY) {
+        level = BROTLI_DEFAULT_QUALITY;
+    }
 
     PHP_VAR_SERIALIZE_INIT(var_hash);
     php_var_serialize(&var, (zval*) value, &var_hash);
