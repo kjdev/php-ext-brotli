@@ -65,6 +65,32 @@ var_dump($unserialized);
 if ($unserialized[0] === $unserialized[1]) {
   echo "SAME\n";
 }
+
+function getEntrySize(string $key) {
+  $info = apcu_cache_info();
+  if (!is_array($info) || !isset($info['cache_list']) || !is_array($info['cache_list'])) {
+    return null;
+  }
+  foreach($info['cache_list'] as $entry) {
+    if (($entry['info'] ?? null) === $key) {
+      return $entry['mem_size'];
+    }
+  }
+  return null;
+}
+include(dirname(__FILE__) . '/data.inc');
+
+ini_set('brotli.apcu_compression_level', BROTLI_COMPRESS_LEVEL_MIN);
+apcu_store('size_test', [$data]);
+$a = getEntrySize('size_test');
+
+ini_set('brotli.apcu_compression_level', BROTLI_COMPRESS_LEVEL_MAX);
+apcu_store('size_test', [$data]);
+$b = getEntrySize('size_test');
+
+if ($a !== null && $b !== null && $b < $a) {
+  echo "SMALLER\n";
+}
 ?>
 --EXPECTF--
 brotli
@@ -104,3 +130,4 @@ array(2) {
   }
 }
 SAME
+SMALLER

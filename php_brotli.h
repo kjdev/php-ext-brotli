@@ -30,6 +30,9 @@ extern zend_module_entry brotli_module_entry;
 typedef struct _php_brotli_context php_brotli_context;
 
 ZEND_BEGIN_MODULE_GLOBALS(brotli)
+#if defined(HAVE_APCU_SUPPORT)
+  zend_long apcu_compression_level;
+#endif
   zend_long output_compression;
   zend_long output_compression_default;
   zend_long output_compression_level;
