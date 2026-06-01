@@ -1183,7 +1183,7 @@ php_stream_wrapper php_stream_brotli_wrapper = {
 static php_brotli_context *php_brotli_context_from_obj(zend_object *obj)
 {
     return (php_brotli_context *)
-        ((char *)(obj) - XtOffsetOf(php_brotli_context, std));
+        ((char *)(obj) - offsetof(php_brotli_context, std));
 }
 
 static void php_brotli_context_free_obj(zend_object *object)
@@ -1364,7 +1364,7 @@ ZEND_MINIT_FUNCTION(brotli)
     memcpy(&php_brotli_compress_context_object_handlers,
            &std_object_handlers, sizeof(zend_object_handlers));
     php_brotli_compress_context_object_handlers.offset
-        = XtOffsetOf(php_brotli_context, std);
+        = offsetof(php_brotli_context, std);
     php_brotli_compress_context_object_handlers.free_obj
         = php_brotli_context_free_obj;
     php_brotli_compress_context_object_handlers.get_constructor
@@ -1392,7 +1392,7 @@ ZEND_MINIT_FUNCTION(brotli)
     memcpy(&php_brotli_uncompress_context_object_handlers,
            &std_object_handlers, sizeof(zend_object_handlers));
     php_brotli_uncompress_context_object_handlers.offset
-        = XtOffsetOf(php_brotli_context, std);
+        = offsetof(php_brotli_context, std);
     php_brotli_uncompress_context_object_handlers.free_obj
         = php_brotli_context_free_obj;
     php_brotli_uncompress_context_object_handlers.get_constructor
