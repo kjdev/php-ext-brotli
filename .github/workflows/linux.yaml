@@ -74,20 +74,13 @@ jobs:
           apt-get update
           apt-get install -y git
         if: ${{ contains(matrix.php, 'buster') }}
-
-      - name: adding github workspace as safe directory
-        run: git config --global --add safe.directory $GITHUB_WORKSPACE
       - name: Checkout repository
-        uses: actions/checkout@v4
-        if: ${{ contains(matrix.platform, 'linux/amd64') }}
-      - name: Clone repository
-        run: |
-          git clone -b $GITHUB_REF_NAME $GITHUB_SERVER_URL/$GITHUB_REPOSITORY $GITHUB_WORKSPACE
-        if: ${{ contains(matrix.platform, 'linux/386') }}
-      - name: Checkout submodules
-        run: |
-          git submodule update --init --recursive
-        if: ${{ ! matrix.library }}
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+          set-safe-directory: true
+          submodules: ${{ ! matrix.library }}
+          token: ${{ github.token }}
       - name: Install dependency library (alpine)
         run: |
           apk add --no-cache brotli-dev
