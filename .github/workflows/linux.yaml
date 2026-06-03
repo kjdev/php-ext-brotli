@@ -4,76 +4,36 @@ on: [push]
 
 jobs:
   ci:
+    permissions:
+      contents: read
+
     runs-on: ubuntu-latest
 
     strategy:
+      fail-fast: false
       matrix:
         php:
-          - '8.5-alpine'
-          - '8.5-zts-alpine'
-          - '8.4-alpine'
-          - '8.4-zts-alpine'
-          - '8.3-alpine'
-          - '8.3-zts-alpine'
-          - '8.2-alpine'
-          - '8.2-zts-alpine'
-          - '8.1-alpine'
-          - '8.1-zts-alpine'
+          - '8.5'
+          - '8.4'
+          - '8.3'
+          - '8.2'
+          - '8.1'
+          - '7.4'
+          - '7.3'
+          - '7.2'
+          - '7.1'
+          - '7.0'
+        ts:
+          - nts
+          - zts
         library:
           - ''
           - 'system'
         apcu:
           - ''
           - 'apcu'
-        image: [php]
-        platform: [linux/amd64]
-        include:
-          - php: '8.3-alpine'
-            apcu: 'apcu'
-            image: php
-            platform: linux/386
-          - php: '8.2-alpine'
-            apcu: 'apcu'
-            image: php
-            platform: linux/386
-          - php: '8.1-alpine'
-            apcu: 'apcu'
-            image: php
-            platform: linux/386
-          - php: '8.0-alpine'
-            image: ghcr.io/kjdev/php
-            platform: linux/amd64
-          - php: '7.4-alpine'
-            image: ghcr.io/kjdev/php
-            platform: linux/amd64
-          - php: '7.3-alpine'
-            image: ghcr.io/kjdev/php
-            platform: linux/amd64
-          - php: '7.2-alpine'
-            image: ghcr.io/kjdev/php
-            platform: linux/amd64
-          - php: '7.1-alpine'
-            image: ghcr.io/kjdev/php
-            platform: linux/amd64
-          - php: '7.0-alpine'
-            image: ghcr.io/kjdev/php
-            platform: linux/amd64
-
-    container:
-      image: ${{ matrix.image }}:${{ matrix.php }}
-      options: --platform ${{ matrix.platform }}
 
     steps:
-      - name: Prepare required command (alpine)
-        run: |
-          apk upgrade --no-cache
-          apk add --no-cache autoconf gcc git libtool make musl-dev
-        if: ${{ contains(matrix.php, 'alpine') }}
-      - name: Prepare required command (buster)
-        run: |
-          apt-get update
-          apt-get install -y git
-        if: ${{ contains(matrix.php, 'buster') }}
       - name: Checkout repository
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
@@ -81,20 +41,23 @@ jobs:
           set-safe-directory: true
           submodules: ${{ ! matrix.library }}
           token: ${{ github.token }}
-      - name: Install dependency library (alpine)
-        run: |
-          apk add --no-cache brotli-dev
-        if: ${{ matrix.library && contains(matrix.php, 'alpine') }}
-      - name: Install dependency library (buster)
-        run: |
-          apt-get install -y libbrotli-dev
-        if: ${{ matrix.library && contains(matrix.php, 'buster') }}
 
-      - name: Install PHP APCu extension
+      - name: Setup PHP (${{ matrix.php }} ${{ matrix.ts }})
+        uses: shivammathur/setup-php@7c071dfe9dc99bdf297fa79cb49ea005b9fcadbc # 2.37.1
+        with:
+          php-version: ${{ matrix.php }}
+          extensions: xml, mbstring${{ matrix.apcu != '' && ', apcu' || '' }}
+          coverage: none
+          ini-values: zend.assertions=1
+        env:
+          phpts: ${{ matrix.ts }}
+
+      - name: Install dependency library
         run: |
-          printf "\n" | pecl install apcu
-          echo 'extension=apcu.so' > $(php --ini | grep 'Scan for' | sed -e 's/"//g' -e 's|.* \(/.*\)$|\1|')/apcu.ini
-        if: ${{ matrix.apcu }}
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            libbrotli-dev
+        if: ${{ matrix.library }}
 
       - name: Build
         run: |
@@ -112,7 +75,7 @@ jobs:
       - name: Test Preparation APCu
         run: |
           cp $(php-config --extension-dir)/apcu.so modules/
-          sed -i 's/\$(PHP_TEST_SHARED_EXTENSIONS)/-d extension=apcu \$(PHP_TEST_SHARED_EXTENSIONS)/' Makefile
+          sed -i 's/\$(PHP_TEST_SHARED_EXTENSIONS)/-d extension=apcu.so \$(PHP_TEST_SHARED_EXTENSIONS)/' Makefile
         if: ${{ matrix.apcu }}
       - name: Test
         run: |
