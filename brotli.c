@@ -130,7 +130,7 @@ static zend_always_inline zend_string *smart_str_extract(smart_str *str) {
 		str->s = NULL;
 		return res;
 	} else {
-		return ZSTR_EMPTY_ALLOC();
+		return zend_string_init("", 0, 0);
 	}
 }
 #endif
