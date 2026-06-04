@@ -1843,6 +1843,9 @@ static ZEND_FUNCTION(brotli_uncompress_add)
 #if defined(HAVE_APCU_SUPPORT)
 static int APC_SERIALIZER_NAME(brotli)(APC_SERIALIZER_ARGS)
 {
+#if defined(COMPILE_DL_BROTLI) && defined(ZTS)
+    ZEND_TSRMLS_CACHE_UPDATE();
+#endif
     int result;
     int lgwin = BROTLI_DEFAULT_WINDOW;
     long level = BROTLI_G(apcu_compression_level);
@@ -1883,6 +1886,9 @@ static int APC_SERIALIZER_NAME(brotli)(APC_SERIALIZER_ARGS)
 
 static int APC_UNSERIALIZER_NAME(brotli)(APC_UNSERIALIZER_ARGS)
 {
+#if defined(COMPILE_DL_BROTLI) && defined(ZTS)
+    ZEND_TSRMLS_CACHE_UPDATE();
+#endif
     const uint8_t *next_in = (const uint8_t*) buf;
     const unsigned char* tmp;
     int result;
