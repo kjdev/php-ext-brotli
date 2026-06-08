@@ -380,6 +380,57 @@ static int php_brotli_output_encoding(void)
     return BROTLI_G(compression_coding);
 }
 
+
+static int php_brotli_output_mimetype_excluded(void)
+{
+	const char *mimetype = SG(sapi_headers).mimetype;
+	const char *exclude = BROTLI_G(output_compression_exclude_types);
+	const char *p, *end;
+	size_t mimetype_len;
+
+	if (!mimetype || !*mimetype || !exclude || !*exclude) {
+		return 0;
+	}
+
+	mimetype_len = strlen(mimetype);
+	p = exclude;
+
+	while (*p) {
+		size_t token_len;
+
+		while (*p == ',' || *p == ' ' || *p == '\t' || *p == '\r' || *p == '\n') {
+			p++;
+		}
+
+		end = p;
+		while (*end && *end != ',' && *end != ' ' && *end != '\t' && *end != '\r' && *end != '\n') {
+			end++;
+		}
+
+		token_len = end - p;
+
+		if (token_len > 0) {
+			if (token_len >= 2 && p[token_len - 2] == '/' && p[token_len - 1] == '*') {
+				size_t prefix_len = token_len - 1;
+
+				if (mimetype_len >= prefix_len &&
+					!strncasecmp(mimetype, p, prefix_len)) {
+					return 1;
+				}
+			}
+
+			if (mimetype_len == token_len &&
+				!strncasecmp(mimetype, p, token_len)) {
+				return 1;
+			}
+		}
+
+		p = end;
+	}
+
+	return 0;
+}
+
 static zend_string *php_brotli_output_handler_load_dict(php_brotli_context *ctx)
 {
     char *file = BROTLI_G(output_compression_dict);
@@ -499,6 +550,12 @@ static int php_brotli_output_handler(void **handler_context,
                                      php_output_context *output_context)
 {
     php_brotli_context *ctx = *(php_brotli_context **)handler_context;
+
+	if ((output_context->op & PHP_OUTPUT_HANDLER_START) &&
+		php_brotli_output_mimetype_excluded()) {
+		return FAILURE;
+	}
+
 
     if (!php_brotli_output_encoding()) {
         if ((output_context->op & PHP_OUTPUT_HANDLER_START)
@@ -781,7 +838,11 @@ PHP_INI_BEGIN()
                     TOSTRING(BROTLI_DEFAULT_QUALITY),
                     PHP_INI_ALL, OnUpdateLong, output_compression_level,
                     zend_brotli_globals, brotli_globals)
-  STD_PHP_INI_ENTRY("brotli.output_compression_dict", "",
+  STD_PHP_INI_ENTRY("brotli.output_compression_exclude_types", "",
+		PHP_INI_ALL, OnUpdateString,
+		output_compression_exclude_types,
+		zend_brotli_globals, brotli_globals)
+	STD_PHP_INI_ENTRY("brotli.output_compression_dict", "",
                     PHP_INI_ALL, OnUpdateString, output_compression_dict,
                     zend_brotli_globals, brotli_globals)
 #if defined(HAVE_APCU_SUPPORT)
@@ -797,6 +858,7 @@ static void php_brotli_init_globals(zend_brotli_globals *brotli_globals)
     brotli_globals->handler_registered = 0;
     brotli_globals->compression_coding = 0;
     brotli_globals->ob_handler = NULL;
+	brotli_globals->output_compression_exclude_types = NULL;
 }
 
 typedef struct _php_brotli_stream_data {
