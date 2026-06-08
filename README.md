@@ -45,7 +45,7 @@ Name                                           | Default | Changeable
 ---------------------------------------------- | ------- | ----------
 brotli.output\_compression                     | 0       | PHP\_INI\_ALL
 brotli.output\_compression\_level              | 11      | PHP\_INI\_ALL
-brotli.output\_compression\_exclude\_types    | ""      | PHP\_INI\_ALL
+brotli.output\_compression\_exclude\_types     | ""      | PHP\_INI\_ALL
 brotli.output\_compression\_dict               | ""      | PHP\_INI\_ALL
 
 * brotli.output\_compression _boolean_
