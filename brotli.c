@@ -392,7 +392,11 @@ static int php_brotli_output_mimetype_excluded(void)
 		return 0;
 	}
 
-	mimetype_len = strlen(mimetype);
+	end = mimetype;
+	while (*end && *end != ';' && *end != ' ' && *end != '\t' && *end != '\r' && *end != '\n') {
+		end++;
+	}
+	mimetype_len = end - mimetype;
 	p = exclude;
 
 	while (*p) {
