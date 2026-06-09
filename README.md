@@ -41,11 +41,12 @@ extension=brotli.so
 
 ### Output handler option
 
-Name                              | Default | Changeable
---------------------------------- | ------- | ----------
-brotli.output\_compression        | 0       | PHP\_INI\_ALL
-brotli.output\_compression\_level | 11      | PHP\_INI\_ALL
-brotli.output\_compression\_dict  | ""      | PHP\_INI\_ALL
+Name                                           | Default | Changeable
+---------------------------------------------- | ------- | ----------
+brotli.output\_compression                     | 0       | PHP\_INI\_ALL
+brotli.output\_compression\_level              | 11      | PHP\_INI\_ALL
+brotli.output\_compression\_exclude\_types     | ""      | PHP\_INI\_ALL
+brotli.output\_compression\_dict               | ""      | PHP\_INI\_ALL
 
 * brotli.output\_compression _boolean_
 
@@ -60,6 +61,27 @@ brotli.output\_compression\_dict  | ""      | PHP\_INI\_ALL
     Compression level used for transparent output compression.
     Specify a value between 0 to 11.
     The default value of `BROTLI_COMPRESS_LEVEL_DEFAULT` (11).
+
+* brotli.output\_compression\_exclude\_types _string_
+
+    Comma-separated list of MIME types that should not be
+    compressed by the transparent output handler.
+
+    Supports exact MIME type matches and wildcard family matches.
+    A wildcard entry must use the `type/*` form.
+
+    Examples:
+
+    ```ini
+    brotli.output_compression_exclude_types="image/*,video/*,audio/*"
+    ```
+
+    ```ini
+    brotli.output_compression_exclude_types="application/pdf,application/zip"
+    ```
+
+    This is useful for already-compressed binary formats where
+    additional Brotli compression usually provides little benefit.
 
 * brotli.output\_compression\_dict _string_
 
