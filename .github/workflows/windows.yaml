@@ -12,6 +12,9 @@ env:
 
 jobs:
   ci:
+    permissions:
+      contents: read
+
     strategy:
       matrix:
         php:
@@ -62,6 +65,13 @@ jobs:
           set-safe-directory: true
           submodules: ${{ ! matrix.library }}
           token: ${{ github.token }}
+
+      - name: Set up MSVC Developer Command Prompt
+        uses: ilammy/msvc-dev-cmd@0b201ec74fa43914dc39ae48a89fd1d8cb592756 # v1.13.0
+        if: ${{ matrix.vs == 'vs17' }}
+        with:
+          arch: ${{ matrix.arch }}
+          toolset: '14.44'
 
       - name: Install dependency library
         run: .\.github\workflows\vcpkg.ps1
