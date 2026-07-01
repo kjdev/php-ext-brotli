@@ -382,6 +382,9 @@ static int php_brotli_output_encoding(void)
 
 static int php_brotli_output_mimetype_excluded(void)
 {
+#if defined(COMPILE_DL_BROTLI) && defined(ZTS)
+    ZEND_TSRMLS_CACHE_UPDATE();
+#endif
     const char *mimetype = SG(sapi_headers).mimetype;
     const char *exclude = BROTLI_G(output_compression_exclude_types);
     const char *p, *end;
