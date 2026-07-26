@@ -25,6 +25,7 @@
 #endif
 
 # pragma GCC diagnostic ignored "-Wpointer-sign"
+# pragma GCC diagnostic ignored "-Wunicode"
 
 ZEND_DECLARE_MODULE_GLOBALS(brotli);
 
