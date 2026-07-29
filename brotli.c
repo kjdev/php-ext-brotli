@@ -25,6 +25,7 @@
 #endif
 
 # pragma GCC diagnostic ignored "-Wpointer-sign"
+# pragma GCC diagnostic ignored "-Wunicode"
 
 ZEND_DECLARE_MODULE_GLOBALS(brotli);
 
@@ -1647,7 +1648,6 @@ static ZEND_FUNCTION(brotli_compress_init)
 
 static ZEND_FUNCTION(brotli_compress_add)
 {
-    zval *res;
     php_brotli_context *ctx;
     size_t buffer_size, buffer_used;
     zend_long mode = BROTLI_OPERATION_FLUSH;
@@ -1825,7 +1825,6 @@ static ZEND_FUNCTION(brotli_uncompress_init)
 
 static ZEND_FUNCTION(brotli_uncompress_add)
 {
-    zval *res;
     php_brotli_context *ctx;
     size_t buffer_size;
     zend_long mode = BROTLI_OPERATION_FLUSH;
