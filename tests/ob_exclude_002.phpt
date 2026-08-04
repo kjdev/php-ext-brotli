@@ -14,7 +14,7 @@ brotli.output_compression_exclude_types=image/*
 HTTP_ACCEPT_ENCODING=br
 --FILE--
 <?php
-header("Content-Type: image/png");
+header("Content-Type: image/svg+xml");
 echo "hi\n";
 ?>
 --EXPECT--

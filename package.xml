@@ -33,6 +33,7 @@
    <file name="config.m4" role="src" />
    <file name="config.w32" role="src" />
    <file name="php_brotli.h" role="src" />
+   <file name="php_brotli_mimetype_exclude.h" role="src" />
    <file name="brotli/LICENSE" role="doc" />
    <file name="brotli/c/common/constants.c" role="src" />
    <file name="brotli/c/common/constants.h" role="src" />

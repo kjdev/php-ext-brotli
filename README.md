@@ -64,20 +64,20 @@ brotli.output\_compression\_dict               | ""      | PHP\_INI\_ALL
 
 * brotli.output\_compression\_exclude\_types _string_
 
+    Extension contains a built-in list of non-compressible MIME types.
+    The list can be found from phpinfo() output. If something is
+    missing, more MIME types can be added with this ini setting.
+
     Comma-separated list of MIME types that should not be
     compressed by the transparent output handler.
 
     Supports exact MIME type matches and wildcard family matches.
     A wildcard entry must use the `type/*` form.
 
-    Examples:
+    Example (both of these are already in the built-in list):
 
     ```ini
-    brotli.output_compression_exclude_types="image/*,video/*,audio/*"
-    ```
-
-    ```ini
-    brotli.output_compression_exclude_types="application/pdf,application/zip"
+    brotli.output_compression_exclude_types="video/*,application/pdf"
     ```
 
     This is useful for already-compressed binary formats where
