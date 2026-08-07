@@ -9,7 +9,6 @@ if (false === stristr(PHP_SAPI, 'cgi')) die('skip need sapi/cgi');
 a=b
 --INI--
 brotli.output_compression=1
-brotli.output_compression_exclude_types=application/pdf
 --ENV--
 HTTP_ACCEPT_ENCODING=br
 --FILE--

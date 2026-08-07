@@ -20,6 +20,7 @@
 # pragma GCC visibility push(hidden)
 #endif
 #include "php_brotli.h"
+#include "php_brotli_mimetype_exclude.h"
 #if defined(USE_BROTLI_BUNDLED)
 # pragma GCC visibility pop
 #endif
@@ -381,13 +382,12 @@ static int php_brotli_output_encoding(void)
     return BROTLI_G(compression_coding);
 }
 
-static int php_brotli_output_mimetype_excluded(void)
+static int php_brotli_output_mimetype_excluded(const char *exclude)
 {
 #if defined(COMPILE_DL_BROTLI) && defined(ZTS)
     ZEND_TSRMLS_CACHE_UPDATE();
 #endif
     const char *mimetype = SG(sapi_headers).mimetype;
-    const char *exclude = BROTLI_G(output_compression_exclude_types);
     const char *p, *end;
     size_t mimetype_len;
 
@@ -558,8 +558,12 @@ static int php_brotli_output_handler(void **handler_context,
 {
     php_brotli_context *ctx = *(php_brotli_context **)handler_context;
 
-    if ((output_context->op & PHP_OUTPUT_HANDLER_START) &&
-        php_brotli_output_mimetype_excluded()) {
+    if ((output_context->op & PHP_OUTPUT_HANDLER_START)
+        && (
+            php_brotli_output_mimetype_excluded(BROTLI_MIMETYPE_EXCLUDE)
+            ||
+            php_brotli_output_mimetype_excluded(BROTLI_G(output_compression_exclude_types))
+        )) {
         return FAILURE;
     }
 
@@ -1526,6 +1530,7 @@ ZEND_MINFO_FUNCTION(brotli)
 #if defined(HAVE_APCU_SUPPORT)
     php_info_print_table_row(2, "APCu serializer ABI", APC_SERIALIZER_ABI);
 #endif
+    php_info_print_table_row(2, "Built-in output compression exclusions", BROTLI_MIMETYPE_EXCLUDE);
     php_info_print_table_end();
     DISPLAY_INI_ENTRIES();
 }
