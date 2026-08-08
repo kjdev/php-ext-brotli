@@ -1517,18 +1517,34 @@ ZEND_RSHUTDOWN_FUNCTION(brotli)
 ZEND_MINFO_FUNCTION(brotli)
 {
     php_info_print_table_start();
-    php_info_print_table_row(2, "Brotli support", "enabled");
-    php_info_print_table_row(2, "Extension Version", BROTLI_EXT_VERSION);
+    php_info_print_table_row(2, "Extension version", BROTLI_EXT_VERSION);
+#if defined(USE_BROTLI_BUNDLED)
+    php_info_print_table_row(2, "Brotli library", "bundled");
+#else
+    php_info_print_table_row(2, "Brotli library", "external");
+#endif
     const zval *ver = zend_get_constant_str("BROTLI_VERSION_TEXT",
                                             sizeof("BROTLI_VERSION_TEXT") - 1);
-    php_info_print_table_row(2, "Library Version", Z_STRVAL_P(ver));
+    php_info_print_table_row(2, "Brotli library version", Z_STRVAL_P(ver));
 #if defined(USE_BROTLI_DICTIONARY)
     php_info_print_table_row(2, "Dictionary support", "enabled");
 #else
     php_info_print_table_row(2, "Dictionary support", "disabled");
 #endif
 #if defined(HAVE_APCU_SUPPORT)
-    php_info_print_table_row(2, "APCu serializer ABI", APC_SERIALIZER_ABI);
+    const char *serializer = zend_ini_string("apc.serializer", sizeof("apc.serializer")-1, 0);
+
+    if (serializer == NULL) {
+        php_info_print_table_row(2, "APCu serializer", "APCu extension not loaded");
+    } else if (strcmp(serializer, "brotli") == 0) {
+        php_info_print_table_row(2, "APCu serializer", "brotli active");
+    } else {
+        php_info_print_table_row(2, "APCu serializer", "brotli inactive");
+    }
+
+    php_info_print_table_row(2, "APCu serializer interface version", APC_SERIALIZER_ABI);
+#else
+    php_info_print_table_row(2, "APCu serializer support", "not built");
 #endif
     php_info_print_table_row(2, "Built-in output compression exclusions", BROTLI_MIMETYPE_EXCLUDE);
     php_info_print_table_end();
