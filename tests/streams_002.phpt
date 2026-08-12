@@ -4,7 +4,7 @@ compress.brotli streams and compatibility
 <?php
 include(dirname(__FILE__) . '/data.inc');
 
-$file = dirname(__FILE__) . '/data.out';
+$file = dirname(__FILE__) . '/data_' . basename(__FILE__, ".php") . '.out';
 
 echo "Stream compression + brotli_uncompress\n";
 
