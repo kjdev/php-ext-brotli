@@ -1,5 +1,5 @@
 --TEST--
-built-in output compression exclude list: exact match (no ini set)
+built-in output compression exclude list: wildcard match (no ini set)
 --SKIPIF--
 <?php
 if (!extension_loaded('brotli')) die('skip need ext/brotli');
@@ -13,7 +13,7 @@ brotli.output_compression=1
 HTTP_ACCEPT_ENCODING=br
 --FILE--
 <?php
-header("Content-Type: application/pdf");
+header("Content-Type: audio/mpeg");
 echo "hi\n";
 ?>
 --EXPECT--

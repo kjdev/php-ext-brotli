@@ -183,6 +183,7 @@
    <file name="tests/ob_exclude_001.phpt" role="test" />
    <file name="tests/ob_exclude_002.phpt" role="test" />
    <file name="tests/ob_exclude_003.phpt" role="test" />
+   <file name="tests/ob_exclude_004.phpt" role="test" />
    <file name="tests/ob_exclude_099.phpt" role="test" />
    <file name="tests/roundtrip.phpt" role="test" />
    <file name="tests/streams_001.phpt" role="test" />
