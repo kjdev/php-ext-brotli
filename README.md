@@ -64,9 +64,10 @@ brotli.output\_compression\_dict               | ""      | PHP\_INI\_ALL
 
 * brotli.output\_compression\_exclude\_types _string_
 
-    Extension contains a built-in list of non-compressible MIME types.
-    The list can be found from phpinfo() output. If something is
-    missing, more MIME types can be added with this ini setting.
+    The extension contains a built-in list of non-compressible MIME
+    types. The list can be found in the phpinfo() output. If
+    something is missing, more MIME types can be added with this
+    ini setting.
 
     Comma-separated list of MIME types that should not be
     compressed by the transparent output handler.
