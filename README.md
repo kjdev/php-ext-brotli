@@ -84,6 +84,33 @@ brotli.output\_compression\_dict               | ""      | PHP\_INI\_ALL
     This is useful for already-compressed binary formats where
     additional Brotli compression usually provides little benefit.
 
+    A token prefixed with `!` negates a match: it makes the extension
+    compress that MIME type even if it is in the built-in exclusion list.
+    Negation also supports exact matches and `type/*` wildcards. Since
+    `!` is a special character in php.ini, values that use it must be
+    quoted.
+
+    ```ini
+    brotli.output_compression_exclude_types="!image/png"
+    ```
+
+    Within the same list, if a MIME type matches multiple tokens, the
+    last matching token wins, regardless of whether it is positive or
+    negative (the same precedence rule `.gitignore` uses). This allows
+    patterns such as:
+
+    ```ini
+    brotli.output_compression_exclude_types="image/*,!image/png"
+    ```
+
+    which excludes all `image/*` types except `image/png`, since the
+    negation is listed after the wildcard.
+
+    Negation only applies within this setting: if it doesn't produce a
+    definitive match for the current MIME type, the built-in list is
+    still consulted. The built-in list's contents can be seen in the
+    phpinfo() output.
+
 * brotli.output\_compression\_dict _string_
 
     Specifies the path to the compressed dictionary file to be
