@@ -382,7 +382,10 @@ static int php_brotli_output_encoding(void)
     return BROTLI_G(compression_coding);
 }
 
-static int php_brotli_output_mimetype_excluded(const char *exclude)
+/* returns 1 if a positive token matches, -1 if a negative (!) token
+ * matches, 0 if no token matches; when multiple tokens in the same
+ * list match, the last one listed wins (gitignore-style precedence) */
+static int php_brotli_output_mimetype_match(const char *list)
 {
 #if defined(COMPILE_DL_BROTLI) && defined(ZTS)
     ZEND_TSRMLS_CACHE_UPDATE();
@@ -390,8 +393,9 @@ static int php_brotli_output_mimetype_excluded(const char *exclude)
     const char *mimetype = SG(sapi_headers).mimetype;
     const char *p, *end;
     size_t mimetype_len;
+    int last_match = 0;
 
-    if (!mimetype || !*mimetype || !exclude || !*exclude) {
+    if (!mimetype || !*mimetype || !list || !*list) {
         return 0;
     }
 
@@ -400,10 +404,11 @@ static int php_brotli_output_mimetype_excluded(const char *exclude)
         end++;
     }
     mimetype_len = end - mimetype;
-    p = exclude;
+    p = list;
 
     while (*p) {
         size_t token_len;
+        zend_bool negated = 0;
 
         while (*p == ',' || *p == ' ' || *p == '\t' || *p == '\r' || *p == '\n') {
             p++;
@@ -416,26 +421,50 @@ static int php_brotli_output_mimetype_excluded(const char *exclude)
 
         token_len = end - p;
 
+        if (token_len > 0 && *p == '!') {
+            negated = 1;
+            p++;
+            token_len--;
+        }
+
         if (token_len > 0) {
+            zend_bool matched = 0;
+
             if (token_len >= 2 && p[token_len - 2] == '/' && p[token_len - 1] == '*') {
                 size_t prefix_len = token_len - 1;
 
                 if (mimetype_len >= prefix_len &&
                     !strncasecmp(mimetype, p, prefix_len)) {
-                    return 1;
+                    matched = 1;
                 }
             }
 
-            if (mimetype_len == token_len &&
+            if (!matched && mimetype_len == token_len &&
                 !strncasecmp(mimetype, p, token_len)) {
-                return 1;
+                matched = 1;
+            }
+
+            if (matched) {
+                last_match = negated ? -1 : 1;
             }
         }
 
         p = end;
     }
 
-    return 0;
+    return last_match;
+}
+
+static int php_brotli_output_mimetype_excluded(void)
+{
+    int result = php_brotli_output_mimetype_match(
+        BROTLI_G(output_compression_exclude_types));
+
+    if (result != 0) {
+        return result > 0;
+    }
+
+    return php_brotli_output_mimetype_match(BROTLI_MIMETYPE_EXCLUDE) > 0;
 }
 
 static zend_string *php_brotli_output_handler_load_dict(php_brotli_context *ctx)
@@ -559,11 +588,7 @@ static int php_brotli_output_handler(void **handler_context,
     php_brotli_context *ctx = *(php_brotli_context **)handler_context;
 
     if ((output_context->op & PHP_OUTPUT_HANDLER_START)
-        && (
-            php_brotli_output_mimetype_excluded(BROTLI_MIMETYPE_EXCLUDE)
-            ||
-            php_brotli_output_mimetype_excluded(BROTLI_G(output_compression_exclude_types))
-        )) {
+        && php_brotli_output_mimetype_excluded()) {
         return FAILURE;
     }
 
