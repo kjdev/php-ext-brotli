@@ -10,10 +10,10 @@
   <email>kjdev@php.net</email>
   <active>yes</active>
  </lead>
- <date>2026-08-13</date>
+ <date>2026-10-24</date>
  <version>
-  <release>0.21.0</release>
-  <api>0.21.0</api>
+  <release>0.21.1</release>
+  <api>0.21.1</api>
  </version>
  <stability>
   <release>stable</release>
@@ -21,11 +21,7 @@
  </stability>
  <license>MIT</license>
  <notes>
-- add: built-in MIME type exclusion list for transparent output compression
-- add: negation tokens (!) in brotli.output_compression_exclude_types
-- add: phpinfo() improvements (bundled/external library, APCu serializer status)
-- fix: memory leak when BrotliEncoderCompressStream() fails on PHP 7.4+
-- fix: compiler warnings
+- update: build-in brotli library to v1.2.1
  </notes>
  <contents>
   <dir name="/">
